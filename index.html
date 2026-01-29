@@ -89,6 +89,19 @@
   @media (max-width: 420px) {
     .row.stack-sm { flex-direction: column; }
   }
+
+    /* Allow flex children to shrink properly on iOS */
+.row > div { min-width: 0; }
+
+/* Make Amount a fixed-width column like the Save token button */
+.amt-col { flex: 0 0 140px; max-width: 140px; }
+
+/* Date takes remaining width */
+.date-col { flex: 1 1 auto; }
+
+/* iOS date input sometimes refuses to shrink without this */
+.date-col input[type="date"] { min-width: 0; width: 100%; }
+
 </style>
 
 
@@ -117,12 +130,12 @@
   </div>
 </div>
 
-    <div class="row stack-sm">
-      <div>
+    <div class="row">
+      <div class="date-col">
         <label for="date">Date</label>
         <input id="date" type="date" />
       </div>
-     <div>
+     <div class="amt-col">
         <label for="amount">Amount (£)</label>
         <input id="amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" />
       </div>
