@@ -85,7 +85,14 @@
 
   <script>
     // 1) Paste your Apps Script Web App URL here:
-    const API_URL = "__APPS_SCRIPT_URL__";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwDbWh9Ab1WYa2NWs457QNQhZPb_RLSmjvXHYEt7iXJzn9r4Exv2LqPSIMqH2jaen2u/exec";
+
+    let TOKEN = localStorage.getItem("expense_token") || "";
+    if (!TOKEN) {
+      TOKEN = prompt("Enter your expense token (saved on this phone):") || "";
+      localStorage.setItem("expense_token", TOKEN);
+    }
+
     const TOKEN = "__EXPENSE_TOKEN__";
 
     const $ = (id) => document.getElementById(id);
@@ -117,7 +124,8 @@
       statusEl.textContent = "Loading…";
       itemsEl.innerHTML = "";
 
-      const url = `${API_URL}?action=list&mode=${encodeURIComponent(mode)}`;
+      const url = `${API_URL}?action=list&mode=${encodeURIComponent(mode)}&token=${encodeURIComponent(TOKEN)}`;
+
       const res = await fetch(url, { method: "GET" });
       const json = await res.json();
 
@@ -159,7 +167,8 @@
       $("addBtn").disabled = true;
       statusEl.textContent = "Saving…";
 
-      const payload = { action: "add", date, amount, category, description, mode };
+      const payload = { action: "add", token: TOKEN, date, amount, category, description, mode };
+
 
       const res = await fetch(API_URL, {
         method: "POST",
