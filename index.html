@@ -5,33 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Expense Quick Log</title>
   <style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 12px; }
-  .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; max-width: 520px; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 12px;
+  }
 
-  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-  .row > * { flex: 1; min-width: 0; } /* min-width:0 is key for iOS flex overflow */
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    max-width: 520px;
+  }
 
-  label { display:block; font-size: 12px; opacity: .8; margin-bottom: 4px; }
+  /* Flex rows */
+  .row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;            /* allow wrapping */
+  }
+
+  /* Allow children to shrink (critical for iOS) */
+  .row > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    opacity: .8;
+    margin-bottom: 4px;
+  }
+
   input, select, button {
-    width: 80%; box-sizing: border-box;
-    padding: 8px; border-radius: 10px; border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
     font-size: 16px;
   }
+
+  /* iOS date input fix */
+  input[type="date"] {
+    min-width: 0;
+  }
+
   button { cursor: pointer; }
 
   .small { font-size: 12px; opacity: .8; }
-  .list { margin-top: 12px; }
-  .item { padding: 10px 0; border-top: 1px solid #eee; display:flex; justify-content: space-between; gap: 10px; }
-  .left { min-width: 0; }
-  .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
-  .amt { font-variant-numeric: tabular-nums; }
-  .topline { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
 
-  /* On small screens, stack just the Date+Amount row */
- @media (max-width: 420px) {
-  .row.half-sm > * { flex: 0 0 calc(50% - 4px); }
-}
+  .list { margin-top: 12px; }
+
+  .item {
+    padding: 10px 0;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .left { min-width: 0; }
+
+  .desc {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;
+  }
+
+  .amt { font-variant-numeric: tabular-nums; }
+
+  .topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Stack only the Date + Amount row on small screens */
+  @media (max-width: 420px) {
+    .row.stack-sm { flex-direction: column; }
+  }
 </style>
+
 
 </head>
 <body>
@@ -58,12 +117,12 @@
   </div>
 </div>
 
-    <div class="row">
+    <div class="row stack-sm">
       <div>
         <label for="date">Date</label>
         <input id="date" type="date" />
       </div>
-     <div style="max-width:160px;">
+     <div>
         <label for="amount">Amount (£)</label>
         <input id="amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" />
       </div>
