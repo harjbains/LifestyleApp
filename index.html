@@ -215,7 +215,10 @@ document.getElementById("saveTokenBtn").addEventListener("click", () => {
       await refresh();
     }
 
-    $("addBtn").addEventListener("click", addExpense);
+   $("addBtn").addEventListener("click", () => {
+  $("status").textContent = "Button clicked…";
+  addExpense();
+});
     $("mode").addEventListener("change", refresh);
 
     setToday();
