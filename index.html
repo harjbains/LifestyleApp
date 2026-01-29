@@ -102,11 +102,48 @@
 /* iOS date input sometimes refuses to shrink without this */
 .date-col input[type="date"] { min-width: 0; width: 90%; }
 
+.tabs { display:flex; gap:8px; margin-bottom:10px; }
+.tab { flex:1; padding:10px; border-radius:10px; border:1px solid #ccc; background:#fff; }
+.tab.active { font-weight:700; background:#f5f5f5; }
+.tabPanel { display:none; }
+.tabPanel.active { display:block; }
+
+.summaryBox {
+  border:1px solid #eee;
+  border-radius:10px;
+  padding:10px;
+}
+
+.summaryTable {
+  width:100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.summaryTable th,
+.summaryTable td {
+  border-bottom:1px solid #eee;
+  padding:8px;
+  text-align:right;
+}
+
+.summaryTable th:first-child,
+.summaryTable td:first-child {
+  text-align:left;
+  font-weight:600;
+}
+
 </style>
 
 
 </head>
 <body>
+  <div class="tabs">
+  <button class="tab active" id="tabEntryBtn" type="button">Entry</button>
+  <button class="tab" id="tabSummaryBtn" type="button">Summary</button>
+</div>
+
+<section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
       <div>
@@ -175,6 +212,22 @@
     </div>
   </div>
 
+</section>
+
+<section id="tabSummary" class="tabPanel">
+  <div style="font-weight:700; margin-bottom:8px;">Monthly Summary</div>
+  <div class="small">This will show your budget vs actual.</div>
+
+  <div class="summaryBox">
+    <p><strong>Current month:</strong> Jan 2026</p>
+    <p>Grocery: £64.72 / £300</p>
+    <p>Transport: £93.25 / £200</p>
+    <p>Health: £90.82 / £150</p>
+    <p>Social: £113.55 / £50</p>
+    <p>Buffer: £21.97 / £50</p>
+    <p><strong>Total:</strong> £384.31 / £750</p>
+  </div>
+</section>
   <script>
     const $ = (id) => document.getElementById(id);
     // 1) Paste your Apps Script Web App URL here:
@@ -315,7 +368,56 @@ const res = await fetch(API_URL, {
     syncTokenUI();
 
     refresh();
+
+    function setTab(name) {
+  $("tabEntryBtn").classList.toggle("active", name === "entry");
+  $("tabSummaryBtn").classList.toggle("active", name === "summary");
+  $("tabEntry").classList.toggle("active", name === "entry");
+  $("tabSummary").classList.toggle("active", name === "summary");
+
+  if (name === "summary") loadSummary();
+}
+
+$("tabEntryBtn").addEventListener("click", () => setTab("entry"));
+$("tabSummaryBtn").addEventListener("click", () => setTab("summary"));
+
+
+async function loadSummary() {
+  const box = document.querySelector(".summaryBox");
+  box.innerHTML = "Loading…";
+
+  const url = `${API_URL}?action=summary&token=${encodeURIComponent(TOKEN)}`;
+  const res = await fetch(url);
+  const json = await res.json();
+
+  if (!json.ok) {
+    box.textContent = `Error: ${json.error || "Unknown"}`;
+    return;
+  }
+
+  const rows = json.table || [];
+  const head = rows[0];
+  const body = rows.slice(1);
+
+  box.innerHTML =
+    `<table class="summaryTable">
+      <thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${body.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+     </table>`;
+}
+
+const SUMMARY_SHEET = "Lifestyle";   // your actual tab name
+const SUMMARY_RANGE = "A1:G20";
+
+function getSummary_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SUMMARY_SHEET);
+  if (!sh) throw new Error(`Sheet "${SUMMARY_SHEET}" not found.`);
+  return sh.getRange(SUMMARY_RANGE).getDisplayValues();
+}
+
   </script>
 </body>
 </html>
-
