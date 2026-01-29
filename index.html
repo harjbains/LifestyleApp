@@ -99,10 +99,18 @@
     const API_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL";
 
    let TOKEN = localStorage.getItem("expense_token") || "";
-if (!TOKEN) {
-  TOKEN = prompt("Enter your expense token (saved on this phone):") || "";
-  localStorage.setItem("expense_token", TOKEN);
+
+function syncTokenUI() {
+  const t = document.getElementById("token");
+  if (t) t.value = TOKEN;
 }
+
+document.getElementById("saveTokenBtn").addEventListener("click", () => {
+  TOKEN = (document.getElementById("token").value || "").trim();
+  localStorage.setItem("expense_token", TOKEN);
+  document.getElementById("status").textContent = TOKEN ? "Token saved ✔" : "Token cleared.";
+  refresh();
+});
 
 
     const TOKEN = "__EXPENSE_TOKEN__";
@@ -211,6 +219,8 @@ if (!TOKEN) {
     $("mode").addEventListener("change", refresh);
 
     setToday();
+    syncTokenUI();
+
     refresh();
   </script>
 </body>
