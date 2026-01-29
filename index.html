@@ -29,7 +29,7 @@
   <div class="card">
     <div class="topline">
       <div>
-        <div style="font-weight:700;">Quick Expense99</div>
+        <div style="font-weight:700;">Quick Expense66</div>
         
       </div>
       <select id="mode" title="List mode">
@@ -215,10 +215,11 @@ document.getElementById("saveTokenBtn").addEventListener("click", () => {
       await refresh();
     }
 
-   $("addBtn").addEventListener("click", () => {
-  $("status").textContent = "Button clicked…";
+ $("addBtn").addEventListener("click", () => {
+  $("status").textContent = "Button click detected ✅";
   addExpense();
 });
+
     $("mode").addEventListener("change", refresh);
 
     setToday();
