@@ -29,7 +29,7 @@
   <div class="card">
     <div class="topline">
       <div>
-        <div style="font-weight:700;">Quick Expense44</div>
+        <div style="font-weight:700;">Quick Expense22</div>
         
       </div>
       <select id="mode" title="List mode">
@@ -95,8 +95,12 @@
   </div>
 
   <script>
+    const $ = (id) => document.getElementById(id);
     // 1) Paste your Apps Script Web App URL here:
     const API_URL = "https://script.google.com/macros/s/AKfycbwDbWh9Ab1WYa2NWs457QNQhZPb_RLSmjvXHYEt7iXJzn9r4Exv2LqPSIMqH2jaen2u/exec";
+
+    const statusEl = $("status");
+    const itemsEl = $("items");
 
    let TOKEN = localStorage.getItem("expense_token") || "";
 
@@ -115,9 +119,8 @@ $("saveTokenBtn").addEventListener("click", () => {
 
    
 
-    const $ = (id) => document.getElementById(id);
-    const statusEl = $("status");
-    const itemsEl = $("items");
+    
+    
 
     function setToday() {
       const d = new Date();
