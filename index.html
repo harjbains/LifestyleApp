@@ -23,13 +23,16 @@
     .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
     .amt { font-variant-numeric: tabular-nums; }
     .topline { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
+    @media (max-width: 420px) {
+  .row.half-sm > * { flex: 0 0 calc(50% - 4px); }
+}
   </style>
 </head>
 <body>
   <div class="card">
     <div class="topline">
       <div>
-        <div style="font-weight:700;">Quick Expense</div>
+        <div style="font-weight:700;">Quick Expense 99</div>
         
       </div>
       <select id="mode" title="List mode">
@@ -49,7 +52,7 @@
   </div>
 </div>
 
-    <div class="row stack-sm">
+    <div class="row half-sm">
       <div>
         <label for="date">Date</label>
         <input id="date" type="date" />
