@@ -105,15 +105,15 @@ function syncTokenUI() {
   if (t) t.value = TOKEN;
 }
 
-document.getElementById("saveTokenBtn").addEventListener("click", () => {
-  TOKEN = (document.getElementById("token").value || "").trim();
+$("saveTokenBtn").addEventListener("click", () => {
+  TOKEN = ($("token").value || "").trim();
   localStorage.setItem("expense_token", TOKEN);
-  document.getElementById("status").textContent = TOKEN ? "Token saved ✔" : "Token cleared.";
+  statusEl.textContent = TOKEN ? "Token saved ✔" : "Token cleared.";
   refresh();
 });
 
 
-    const TOKEN = "__EXPENSE_TOKEN__";
+   
 
     const $ = (id) => document.getElementById(id);
     const statusEl = $("status");
