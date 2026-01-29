@@ -5,34 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Expense Quick Log</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 12px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; max-width: 520px; }
-    .row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .row > * { flex: 1; }
-    label { display:block; font-size: 12px; opacity: .8; margin-bottom: 4px; }
-    input, select, button {
-      width: 100%; box-sizing: border-box;
-      padding: 10px; border-radius: 10px; border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button { cursor: pointer; }
-    .small { font-size: 12px; opacity: .8; }
-    .list { margin-top: 12px; }
-    .item { padding: 10px 0; border-top: 1px solid #eee; display:flex; justify-content: space-between; gap: 10px; }
-    .left { min-width: 0; }
-    .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
-    .amt { font-variant-numeric: tabular-nums; }
-    .topline { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
-    @media (max-width: 420px) {
-  .row.half-sm > * { flex: 0 0 calc(50% - 4px); }
-}
-  </style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 12px; }
+  .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; max-width: 520px; }
+
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 0; } /* min-width:0 is key for iOS flex overflow */
+
+  label { display:block; font-size: 12px; opacity: .8; margin-bottom: 4px; }
+  input, select, button {
+    width: 100%; box-sizing: border-box;
+    padding: 10px; border-radius: 10px; border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  button { cursor: pointer; }
+
+  .small { font-size: 12px; opacity: .8; }
+  .list { margin-top: 12px; }
+  .item { padding: 10px 0; border-top: 1px solid #eee; display:flex; justify-content: space-between; gap: 10px; }
+  .left { min-width: 0; }
+  .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+  .amt { font-variant-numeric: tabular-nums; }
+  .topline { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
+
+  /* On small screens, stack just the Date+Amount row */
+  @media (max-width: 420px) {
+    .row.stack-sm { flex-direction: column; }
+  }
+</style>
+
 </head>
 <body>
   <div class="card">
     <div class="topline">
       <div>
-        <div style="font-weight:700;">Quick Expense 99</div>
+        <div style="font-weight:700;">Quick Expense</div>
         
       </div>
       <select id="mode" title="List mode">
@@ -52,7 +58,7 @@
   </div>
 </div>
 
-    <div class="row half-sm">
+    <div class="row stack-sm">
       <div>
         <label for="date">Date</label>
         <input id="date" type="date" />
