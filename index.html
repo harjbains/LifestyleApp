@@ -1,1 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Expense Quick Log</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; max-width: 520px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .row > * { flex: 1; }
+    label { display:block; font-size: 12px; opacity: .8; margin-bottom: 4px; }
+    input, select, button {
+      width: 100%; box-sizing: border-box;
+      padding: 10px; border-radius: 10px; border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button { cursor: pointer; }
+    .small { font-size: 12px; opacity: .8; }
+    .list { margin-top: 12px; }
+    .item { padding: 10px 0; border-top: 1px solid #eee; display:flex; justify-content: space-between; gap: 10px; }
+    .left { min-width: 0; }
+    .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+    .amt { font-variant-numeric: tabular-nums; }
+    .topline { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="topline">
+      <div>
+        <div style="font-weight:700;">Quick Expense</div>
+        <div class="small">Adds to your Google Sheet + shows latest 10 (today)</div>
+      </div>
+      <select id="mode" title="List mode">
+        <option value="today" selected>Today</option>
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="date">Date</label>
+        <input id="date" type="date" />
+      </div>
+      <div>
+        <label for="amount">Amount (£)</label>
+        <input id="amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="category">Category</label>
+        <select id="category">
+          <option value="">Select…</option>
+          <option>Grocery</option>
+          <option>Transport</option>
+          <option>Health</option>
+          <option>Social</option>
+          <option>Household</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="description">Description</label>
+        <input id="description" type="text" placeholder="Asda, petrol, Amazon…" />
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="addBtn">+ Add expense</button>
+    </div>
+
+    <div id="status" class="small"></div>
+
+    <div class="list">
+      <div style="font-weight:700; margin-top:10px;">Latest entries</div>
+      <div id="items"></div>
+    </div>
+  </div>
+
+  <script>
+    // 1) Paste your Apps Script Web App URL here:
+    const API_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $("status");
+    const itemsEl = $("items");
+
+    function setToday() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      $("date").value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    function money(n) {
+      const v = Number(n);
+      if (!isFinite(v)) return "";
+      return v.toLocaleString(undefined, { style: "currency", currency: "GBP" });
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+      }[c]));
+    }
+
+    async function refresh() {
+      const mode = $("mode").value;
+      statusEl.textContent = "Loading…";
+      itemsEl.innerHTML = "";
+
+      const url = `${API_URL}?action=list&mode=${encodeURIComponent(mode)}`;
+      const res = await fetch(url, { method: "GET" });
+      const json = await res.json();
+
+      if (!json.ok) {
+        statusEl.textContent = `Error: ${json.error || "Unknown"}`;
+        return;
+      }
+
+      const data = json.data || [];
+      statusEl.textContent = mode === "today"
+        ? (data.length ? `Showing ${data.length} from today.` : "No entries yet today.")
+        : (data.length ? `Showing latest ${data.length} entries.` : "No entries yet.");
+
+      itemsEl.innerHTML = data.map(r => {
+        const cat = escapeHtml(r.category || "");
+        const desc = escapeHtml(r.description || "");
+        const amt = money(r.amount);
+        return `
+          <div class="item">
+            <div class="left">
+              <div style="font-weight:600;">${cat || "—"}</div>
+              <div class="small desc">${desc || "—"}</div>
+            </div>
+            <div class="amt" style="font-weight:700;">${amt}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function addExpense() {
+      const date = $("date").value;
+      const amount = $("amount").value;
+      const category = $("category").value;
+      const description = $("description").value;
+      const mode = $("mode").value;
+
+      if (!amount) { statusEl.textContent = "Enter an amount."; return; }
+
+      $("addBtn").disabled = true;
+      statusEl.textContent = "Saving…";
+
+      const payload = { action: "add", date, amount, category, description, mode };
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+      $("addBtn").disabled = false;
+
+      if (!json.ok) {
+        statusEl.textContent = `Error: ${json.error || "Unknown"}`;
+        return;
+      }
+
+      // Clear minimal fields for speed
+      $("amount").value = "";
+      $("description").value = "";
+      $("category").value = "";
+
+      statusEl.textContent = "Saved ✔";
+      await refresh();
+    }
+
+    $("addBtn").addEventListener("click", addExpense);
+    $("mode").addEventListener("change", refresh);
+
+    setToday();
+    refresh();
+  </script>
+</body>
+</html>
 
