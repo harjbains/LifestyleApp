@@ -28,9 +28,9 @@
   .topline { display:flex; justify-content: space-between; align-items:center; gap: 8px; margin-bottom: 8px; }
 
   /* On small screens, stack just the Date+Amount row */
-  @media (max-width: 420px) {
-    .row.stack-sm { flex-direction: column; }
-  }
+ @media (max-width: 420px) {
+  .row.half-sm > * { flex: 0 0 calc(50% - 4px); }
+}
 </style>
 
 </head>
@@ -58,7 +58,7 @@
   </div>
 </div>
 
-    <div class="row stack-sm">
+    <div class="row half-sm">
       <div>
         <label for="date">Date</label>
         <input id="date" type="date" />
