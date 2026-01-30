@@ -54,7 +54,7 @@
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div style="font-weight:700;">Quick Expense 777</div>
+      <div style="font-weight:700;">Quick Expense 555</div>
       <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
@@ -125,7 +125,7 @@
 </section>
 
 <script>
- // 1. SELECTORS & CONSTANTS
+// 1. SELECTORS & CONSTANTS
   const $ = (id) => document.getElementById(id);
   const API_URL = "https://odd-wind-5e5a.harjbains.workers.dev/";
   let summaryModel = null;
@@ -239,11 +239,19 @@
         description: $("description").value
       }, 'POST');
       if (json.ok) {
-        $("amount").value = "";
-        $("description").value = "";
-        statusEl.textContent = "Saved ✔";
-        refresh();
-      }
+      // 1. Clear the inputs so they are ready for the next entry
+      $("amount").value = "";
+      $("description").value = "";
+      
+      // 2. Give the user a visual "Success" message
+      $("status").textContent = "Saved ✔";
+      
+      // 3. THIS IS THE MAGIC: Re-run the list fetch immediately
+      await refresh(); 
+      
+      // 4. Clear the success message after 2 seconds
+      setTimeout(() => { $("status").textContent = ""; }, 2000);
+    }
     } catch (e) { alert("Save failed"); }
     $("addBtn").disabled = false;
   }
