@@ -408,7 +408,12 @@
   // ---------- Summary + Drilldown ----------
   let summaryModel = null;
 
-  async function loadSummary() {
+let summaryLoadedAt = 0;
+
+async function loadSummary() {
+  const now = Date.now();
+  if (now - summaryLoadedAt < 30_000 && summaryModel) return; // 30s
+  summaryLoadedAt = now;
     const status = $("sumStatus");
     const cards = $("sumCards");
     const totals = $("sumTotals");
@@ -541,6 +546,11 @@
   setToday();
   syncTokenUI();
   refresh();
+
+// 🔥 Warm up backend (AFTER apiGet exists)
+setTimeout(() => {
+ // apiGet({ action: "list", mode: "all" }).catch(() => {});
+}, 0);
 </script>
 
 </body>
