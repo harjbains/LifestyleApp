@@ -80,7 +80,7 @@ input#date, input#amount {
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div style="font-weight:700;">Quick Expense 555</div>
+      <div style="font-weight:700;">Quick Expense</div>
       <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
@@ -353,6 +353,25 @@ input#date, input#amount {
     $("tabEntryBtn").onclick = () => setTab("entry");
     $("tabSummaryBtn").onclick = () => setTab("summary");
     $("tabSettingsBtn").onclick = () => setTab("settings");
+
+    / Listen for the end of a touch
+window.addEventListener('touchend', async (e) => {
+  const touchEnd = e.changedTouches[0].pageY;
+  const swipeDistance = touchEnd - touchStart;
+
+  // If user swiped down more than 150px and is at the top of the page
+  if (swipeDistance > 150 && window.scrollY === 0) {
+    statusEl.textContent = "Refreshing...";
+    try {
+      await refresh();
+      await refreshCategories();
+      statusEl.textContent = "Updated ✔";
+      setTimeout(() => { statusEl.textContent = ""; }, 2000);
+    } catch (err) {
+      statusEl.textContent = "Refresh failed";
+    }
+  }
+}, { passive: true });
   }
 </script>
 </body>
