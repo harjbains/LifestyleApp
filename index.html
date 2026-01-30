@@ -54,7 +54,7 @@
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div style="font-weight:700;">Quick Expense 99</div>
+      <div style="font-weight:700;">Quick Expense 66</div>
       <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
@@ -142,26 +142,30 @@
   // Note: Standard Clerk hostname used here
   script.src = `https://secure-platypus-64.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
 
-  script.onload = async () => {
-    // The script defines 'Clerk' globally. We just need to load it.
-    await window.Clerk.load({
-        publishableKey: clerkPubKey
+script.onload = async () => {
+  // We use window.Clerk directly because it is already initialized by the script
+  await window.Clerk.load({
+    publishableKey: clerkPubKey
+  });
+
+  if (window.Clerk.user) {
+    USER_ID = window.Clerk.user.id;
+    
+    // This mounts the profile icon/logout button automatically
+    const userBtn = document.createElement('div');
+    userBtn.id = "user-button";
+    userBtn.style.marginLeft = "auto";
+    document.querySelector('.tabs').appendChild(userBtn);
+    window.Clerk.mountUserButton(userBtn);
+
+    init(); 
+  } else {
+    // This forces the redirect to your home page specifically
+    window.Clerk.openSignIn({
+      afterSignInUrl: window.location.origin + window.location.pathname,
+      afterSignUpUrl: window.location.origin + window.location.pathname
     });
-
-    if (window.Clerk.user) {
-        USER_ID = window.Clerk.user.id;
-        
-        // Mount the Sign Out button
-        const userBtn = document.createElement('div');
-        userBtn.id = "user-button";
-        userBtn.style.marginLeft = "auto";
-        document.querySelector('.tabs').appendChild(userBtn);
-        window.Clerk.mountUserButton(userBtn);
-
-        init(); // Start your app
-    } else {
-        window.Clerk.openSignIn();
-    }
+  }
 };
   document.head.appendChild(script);
 
