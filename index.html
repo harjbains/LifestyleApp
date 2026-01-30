@@ -54,7 +54,7 @@
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div style="font-weight:700;">Quick Expense 1978</div>
+      <div style="font-weight:700;">Quick Expense 007</div>
       <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
@@ -170,22 +170,22 @@ script.onload = async () => {
   document.head.appendChild(script);
 
   // 3. CORE API CALL (Verified with Clerk Token)
-  async function apiCall(endpoint, options = {}) {
+async function apiCall(queryString, options = {}) {
     const user = window.Clerk.user;
     if (!user) return { ok: false, error: "Not logged in" };
 
     const token = await window.Clerk.session.getToken();
     
-    // Construct the full URL - Ensure 'endpoint' starts with a '?'
-    const url = `https://odd-wind-5e5a.harjbains.workers.dev/${endpoint}`;
+    // Ensure queryString is handled as a plain string
+    const url = `https://odd-wind-5e5a.harjbains.workers.dev/${queryString}`;
 
     const res = await fetch(url, {
-        ...options,
+        method: options.method || 'GET',
         headers: {
-            ...options.headers,
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-        }
+        },
+        body: options.body ? JSON.stringify(options.body) : null
     });
 
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
@@ -235,20 +235,25 @@ script.onload = async () => {
     $("addBtn").disabled = false;
   }
 
-  async function refreshCategories() {
-    const userId = window.Clerk.user.id;
-    // Note: No curly braces around the endpoint string
-    const data = await apiCall(`?action=get_budgets&user_id=${userId}`);
-    
-    if (data.ok) {
-        const select = document.getElementById('categorySelect');
-        select.innerHTML = '<option value="">Select Category</option>';
-        data.data.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b.category;
-            opt.textContent = b.category;
-            select.appendChild(opt);
-        });
+async function refreshCategories() {
+    const user = window.Clerk.user;
+    if (!user) return;
+
+    try {
+        const data = await apiCall(`?action=get_budgets&user_id=${user.id}`);
+        const select = document.getElementById('categorySelect'); // <-- DOUBLE CHECK THIS ID
+        
+        if (select && data.ok) {
+            select.innerHTML = '<option value="">Select Category</option>';
+            data.data.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.category;
+                opt.textContent = b.category;
+                select.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error("Failed to load categories:", err);
     }
 }
 
