@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Expense Quick Log</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 12px; }
@@ -125,68 +125,73 @@
 </section>
 
 <script>
+  // 1. SELECTORS & CONSTANTS
   const $ = (id) => document.getElementById(id);
   const API_URL = "https://odd-wind-5e5a.harjbains.workers.dev/";
   const statusEl = $("status");
   const itemsEl = $("items");
+  
+  let USER_ID = null;
+  let summaryModel = null;
 
-  let USER_ID = localStorage.getItem("uid");
-  if (!USER_ID) {
-    USER_ID = crypto.randomUUID();
-    localStorage.setItem("uid", USER_ID);
-  }
+  // 2. CLERK AUTHENTICATION SETUP
+  const clerkPubKey = "pk_test_c2VjdXJlLXBsYXR5cHVzLTY0LmNsZXJrLmFjY291bnRzLmRldiQ";
+  const script = document.createElement('script');
+  script.setAttribute('data-clerk-publishable-key', clerkPubKey);
+  script.async = true;
+  // Note: Standard Clerk hostname used here
+  script.src = `https://secure-platypus-64.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
 
-  function setToday() {
-    const d = new Date();
-    $("date").value = d.toISOString().split('T')[0];
-  }
+  script.onload = async () => {
+    window.Clerk = new Clerk(clerkPubKey);
+    await Clerk.load();
 
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
-  }
+    if (Clerk.user) {
+      USER_ID = Clerk.user.id;
+      
+      // Mount the Sign Out button into the tabs bar
+      const userBtn = document.createElement('div');
+      userBtn.id = "user-button";
+      userBtn.style.marginLeft = "auto";
+      document.querySelector('.tabs').appendChild(userBtn);
+      Clerk.mountUserButton(userBtn);
 
-  function fmtGBP(n){
-    return Number(n).toLocaleString(undefined,{style:"currency",currency:"GBP"});
-  }
+      // Initialize App Data once authenticated
+      init();
+    } else {
+      Clerk.openSignIn();
+    }
+  };
+  document.head.appendChild(script);
 
-  function monthKeyFromLabel(label){
-    const parts = String(label).trim().split(/\s+/);
-    if (parts.length < 2) return "";
-    const mStr = parts[0].slice(0,3).toLowerCase();
-    const map = { jan:"01", feb:"02", mar:"03", apr:"04", may:"05", jun:"06", jul:"07", aug:"08", sep:"09", oct:"10", nov:"11", dec:"12" };
-    return `${parts[1]}-${map[mStr] || "01"}`;
-  }
-
-  async function apiGet(params) {
+  // 3. CORE API CALL (Verified with Clerk Token)
+  async function apiCall(params = {}, body = null) {
+    const token = await window.Clerk.session.getToken();
     const url = new URL(API_URL);
+    
+    // Add params to URL
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    // Always include the verified USER_ID
     url.searchParams.set("user_id", USER_ID);
-    const res = await fetch(url);
+
+    const res = await fetch(url, {
+      method: body ? "POST" : "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: body ? JSON.stringify(body) : null
+    });
+    
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
     return res.json();
   }
 
-async function apiPost(params) {
-  const body = new URLSearchParams();
-  // Spread existing params + add user_id
-  const fullParams = { ...params, user_id: USER_ID };
-  
-  for (const [key, value] of Object.entries(fullParams)) {
-    body.append(key, value);
-  }
-
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString()
-  });
-  return res.json();
-}
-
-  // --- REFRESH DATA ---
+  // 4. APP LOGIC FUNCTIONS
   async function refresh() {
     statusEl.textContent = "Loading…";
     try {
-      const json = await apiGet({ action: "list" });
+      const json = await apiCall({ action: "list" });
       if (!json.ok) throw new Error(json.error);
       itemsEl.innerHTML = json.data.map(r => `
         <div class="item">
@@ -198,7 +203,10 @@ async function apiPost(params) {
         </div>
       `).join("");
       statusEl.textContent = "";
-    } catch (e) { statusEl.textContent = "Error loading list"; }
+    } catch (e) { 
+      statusEl.textContent = "Error loading list";
+      console.error(e);
+    }
   }
 
   async function addExpense() {
@@ -206,8 +214,7 @@ async function apiPost(params) {
     if (!amount) return alert("Enter an amount");
     $("addBtn").disabled = true;
     try {
-      const json = await apiPost({
-        action: "add",
+      const json = await apiCall({ action: "add" }, {
         date: $("date").value,
         amount,
         category: $("category").value,
@@ -223,10 +230,9 @@ async function apiPost(params) {
     $("addBtn").disabled = false;
   }
 
-  // --- SETTINGS / CATEGORIES ---
   async function refreshCategories() {
     try {
-      const json = await apiGet({ action: "get_budgets" });
+      const json = await apiCall({ action: "get_budgets" });
       const cats = json.data || [];
       $("category").innerHTML = '<option value="">Select…</option>' + 
         cats.map(c => `<option value="${escapeHtml(c.category)}">${escapeHtml(c.category)}</option>`).join("");
@@ -240,16 +246,76 @@ async function apiPost(params) {
     } catch (e) { console.error(e); }
   }
 
-  $("saveBudgetBtn").addEventListener("click", async () => {
-    const category = $("newCatName").value.trim();
-    const amount = $("newCatAmount").value;
-    if (!category || !amount) return alert("Fill all fields");
-    await apiPost({ action: "set_budget", category, amount });
-    $("newCatName").value = ""; $("newCatAmount").value = "";
-    refreshCategories();
-  });
+  async function loadSummary() {
+    $("sumStatus").textContent = "Loading...";
+    try {
+      const json = await apiCall({ action: "summary" });
+      if (!json.ok) throw new Error(json.error);
+      
+      summaryModel = json;
+      const picker = $("monthPick");
+      
+      if (!json.months || json.months.length === 0) {
+        $("sumStatus").textContent = "No data found.";
+        $("sumCards").innerHTML = "";
+        $("sumTotals").innerHTML = "";
+        picker.innerHTML = "";
+        return;
+      }
 
-  // --- TABS ---
+      picker.innerHTML = json.months.map((m, i) => `<option value="${i}">${m.month}</option>`).join("");
+      picker.onchange = () => renderSummaryForIndex(picker.value);
+      
+      renderSummaryForIndex(0);
+      $("sumStatus").textContent = "";
+    } catch (e) { 
+      $("sumStatus").textContent = "Error: " + e.message; 
+    }
+  }
+
+  function renderSummaryForIndex(idx) {
+    if (!summaryModel || !summaryModel.months || !summaryModel.months[idx]) return;
+    const m = summaryModel.months[idx];
+    const budgets = summaryModel.budgets || {};
+    const categories = summaryModel.categories || [];
+    const monthKey = monthKeyFromLabel(m.month);
+
+    $("sumCards").innerHTML = categories.map(cat => {
+      const b = budgets[cat] || 0;
+      const s = m.totals[cat] || 0;
+      const pct = b > 0 ? Math.min(100, (s / b) * 100) : 0;
+      return `
+        <div class="card2">
+          <div class="row2"><b>${escapeHtml(cat)}</b> <span>${fmtGBP(s)}</span></div>
+          <div class="row2 small muted">Budget: ${fmtGBP(b)}</div>
+          <div class="bar"><div style="width:${pct}%; background:${pct >= 100 ? '#ff4444' : '#111'}"></div></div>
+        </div>`;
+    }).join("");
+
+    const totalSpent = Object.values(m.totals).reduce((a, b) => a + b, 0);
+    $("sumTotals").innerHTML = `<b>Total Spent: ${fmtGBP(totalSpent)}</b>`;
+  }
+
+  // 5. HELPERS
+  function setToday() {
+    $("date").value = new Date().toISOString().split('T')[0];
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
+  }
+
+  function fmtGBP(n){
+    return Number(n).toLocaleString(undefined,{style:"currency",currency:"GBP"});
+  }
+
+  function monthKeyFromLabel(label){
+    const parts = String(label).trim().split(/\s+/);
+    if (parts.length < 2) return "";
+    const map = { jan:"01", feb:"02", mar:"03", apr:"04", may:"05", jun:"06", jul:"07", aug:"08", sep:"09", oct:"10", nov:"11", dec:"12" };
+    return `${parts[1]}-${map[parts[0].slice(0,3).toLowerCase()] || "01"}`;
+  }
+
   function setTab(name) {
     ["Entry", "Summary", "Settings"].forEach(t => {
       $(`tab${t}Btn`).classList.toggle("active", name === t.toLowerCase());
@@ -259,73 +325,26 @@ async function apiPost(params) {
     if (name === "settings") refreshCategories();
   }
 
-  $("tabEntryBtn").addEventListener("click", () => setTab("entry"));
-  $("tabSummaryBtn").addEventListener("click", () => setTab("summary"));
-  $("tabSettingsBtn").addEventListener("click", () => setTab("settings"));
+  // 6. INITIALIZATION & EVENTS
+  function init() {
+    setToday();
+    refresh();
+    refreshCategories();
 
-  // --- SUMMARY ---
-  let summaryModel = null;
-  async function loadSummary() {
-  $("sumStatus").textContent = "Loading...";
-  try {
-    const json = await apiGet({ action: "summary" });
-    if (!json.ok) throw new Error(json.error);
-    
-    summaryModel = json;
-    const picker = $("monthPick");
-    
-    if (!json.months || json.months.length === 0) {
-      $("sumStatus").textContent = "No data found. Add some expenses first!";
-      $("sumCards").innerHTML = "";
-      $("sumTotals").innerHTML = "";
-      picker.innerHTML = "";
-      return;
-    }
+    $("addBtn").onclick = addExpense;
+    $("saveBudgetBtn").onclick = async () => {
+      const category = $("newCatName").value.trim();
+      const amount = $("newCatAmount").value;
+      if (!category || !amount) return alert("Fill all fields");
+      await apiCall({ action: "set_budget" }, { category, amount });
+      $("newCatName").value = ""; $("newCatAmount").value = "";
+      refreshCategories();
+    };
 
-    picker.innerHTML = json.months.map((m, i) => `<option value="${i}">${m.month}</option>`).join("");
-    picker.onchange = () => renderSummaryForIndex(picker.value);
-    
-    renderSummaryForIndex(0);
-    $("sumStatus").textContent = "";
-  } catch (e) { 
-    $("sumStatus").textContent = "Error loading summary: " + e.message; 
+    $("tabEntryBtn").onclick = () => setTab("entry");
+    $("tabSummaryBtn").onclick = () => setTab("summary");
+    $("tabSettingsBtn").onclick = () => setTab("settings");
   }
-}
-
-function renderSummaryForIndex(idx) {
-  if (!summaryModel || !summaryModel.months || !summaryModel.months[idx]) return;
-
-  const m = summaryModel.months[idx];
-  const budgets = summaryModel.budgets || {};
-  const categories = summaryModel.categories || []; // Safety fallback
-  const monthKey = monthKeyFromLabel(m.month);
-
-  if (categories.length === 0) {
-    $("sumCards").innerHTML = "<p class='small'>No categories found. Add budgets in Settings!</p>";
-    return;
-  }
-
-  $("sumCards").innerHTML = categories.map(cat => {
-    const b = budgets[cat] || 0;
-    const s = m.totals[cat] || 0;
-    const pct = b > 0 ? Math.min(100, (s / b) * 100) : 0;
-    return `
-      <div class="card2" onclick="showCategoryDetails('${encodeURIComponent(cat)}','${encodeURIComponent(monthKey)}','${encodeURIComponent(m.month)}')">
-        <div class="row2"><b>${escapeHtml(cat)}</b> <span>${fmtGBP(s)}</span></div>
-        <div class="row2 small muted">Budget: ${fmtGBP(b)}</div>
-        <div class="bar"><div style="width:${pct}%; background:${pct > 100 ? 'red' : '#111'}"></div></div>
-      </div>`;
-  }).join("");
-
-  const totalSpent = Object.values(m.totals).reduce((a, b) => a + b, 0);
-  $("sumTotals").innerHTML = `<b>Total Spent: ${fmtGBP(totalSpent)}</b>`;
-}
-
-  // --- INIT ---
-  setToday();
-  refresh();
-  refreshCategories();
-  $("addBtn").addEventListener("click", addExpense);
 </script>
 </body>
 </html>
