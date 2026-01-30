@@ -143,25 +143,26 @@
   script.src = `https://secure-platypus-64.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
 
   script.onload = async () => {
-    window.Clerk = new Clerk(clerkPubKey);
-    await Clerk.load();
+    // The script defines 'Clerk' globally. We just need to load it.
+    await window.Clerk.load({
+        publishableKey: clerkPubKey
+    });
 
-    if (Clerk.user) {
-      USER_ID = Clerk.user.id;
-      
-      // Mount the Sign Out button into the tabs bar
-      const userBtn = document.createElement('div');
-      userBtn.id = "user-button";
-      userBtn.style.marginLeft = "auto";
-      document.querySelector('.tabs').appendChild(userBtn);
-      Clerk.mountUserButton(userBtn);
+    if (window.Clerk.user) {
+        USER_ID = window.Clerk.user.id;
+        
+        // Mount the Sign Out button
+        const userBtn = document.createElement('div');
+        userBtn.id = "user-button";
+        userBtn.style.marginLeft = "auto";
+        document.querySelector('.tabs').appendChild(userBtn);
+        window.Clerk.mountUserButton(userBtn);
 
-      // Initialize App Data once authenticated
-      init();
+        init(); // Start your app
     } else {
-      Clerk.openSignIn();
+        window.Clerk.openSignIn();
     }
-  };
+};
   document.head.appendChild(script);
 
   // 3. CORE API CALL (Verified with Clerk Token)
