@@ -125,80 +125,56 @@
 </section>
 
 <script>
-  // 1. SELECTORS & CONSTANTS
-  const $ = (id) => document.getElementById(id);
+ const $ = (id) => document.getElementById(id);
   const API_URL = "https://odd-wind-5e5a.harjbains.workers.dev/";
-  const statusEl = $("status");
-  const itemsEl = $("items");
-  
-  let USER_ID = null;
   let summaryModel = null;
 
-  // 2. CLERK AUTHENTICATION SETUP
+  // 1. CLERK AUTH
   const clerkPubKey = "pk_test_c2VjdXJlLXBsYXR5cHVzLTY0LmNsZXJrLmFjY291bnRzLmRldiQ";
   const script = document.createElement('script');
   script.setAttribute('data-clerk-publishable-key', clerkPubKey);
   script.async = true;
-  // Note: Standard Clerk hostname used here
   script.src = `https://secure-platypus-64.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
-
-script.onload = async () => {
-  // We use window.Clerk directly because it is already initialized by the script
-  await window.Clerk.load({
-    publishableKey: clerkPubKey
-  });
-
-  if (window.Clerk.user) {
-    USER_ID = window.Clerk.user.id;
-    
-    // This mounts the profile icon/logout button automatically
-    const userBtn = document.createElement('div');
-    userBtn.id = "user-button";
-    userBtn.style.marginLeft = "auto";
-    document.querySelector('.tabs').appendChild(userBtn);
-    window.Clerk.mountUserButton(userBtn);
-
-    init(); 
-  } else {
-    // This forces the redirect to your home page specifically
-    window.Clerk.openSignIn({
-      afterSignInUrl: window.location.origin + window.location.pathname,
-      afterSignUpUrl: window.location.origin + window.location.pathname
-    });
-  }
-};
+  script.onload = async () => {
+    await window.Clerk.load();
+    if (window.Clerk.user) {
+      const userBtn = document.createElement('div');
+      document.querySelector('.tabs').appendChild(userBtn);
+      window.Clerk.mountUserButton(userBtn);
+      init(); 
+    } else {
+      window.Clerk.openSignIn();
+    }
+  };
   document.head.appendChild(script);
 
-  // 3. CORE API CALL (Verified with Clerk Token)
-async function apiCall(queryString, options = {}) {
+  // 2. REPAIRED API CALL
+  async function apiCall(action, params = {}, method = 'GET') {
     const user = window.Clerk.user;
-    if (!user) return { ok: false, error: "Not logged in" };
-
     const token = await window.Clerk.session.getToken();
     
-    // Ensure queryString is handled as a plain string
-    const url = `https://odd-wind-5e5a.harjbains.workers.dev/${queryString}`;
+    // Always attach action and user_id to the URL
+    const url = new URL(API_URL);
+    url.searchParams.set("action", action);
+    url.searchParams.set("user_id", user.id);
 
-    const res = await fetch(url, {
-        method: options.method || 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: options.body ? JSON.stringify(options.body) : null
-    });
+    const options = {
+      method,
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    };
 
-    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    if (method === 'POST') options.body = JSON.stringify(params);
+
+    const res = await fetch(url.toString(), options);
     return res.json();
-}
+  }
 
-  // 4. APP LOGIC FUNCTIONS
+  // 3. LOGIC FUNCTIONS
   async function refresh() {
-    statusEl.textContent = "Loading…";
+    $("status").textContent = "Loading…";
     try {
-      const json = await apiCall({ action: "list" });
-      if (!json.ok) throw new Error(json.error);
-      itemsEl.innerHTML = json.data.map(r => `
+      const json = await apiCall("list");
+      $("items").innerHTML = (json.data || []).map(r => `
         <div class="item">
           <div class="left">
             <div style="font-weight:600;">${escapeHtml(r.category)}</div>
@@ -207,155 +183,41 @@ async function apiCall(queryString, options = {}) {
           <div class="amt" style="font-weight:700;">${fmtGBP(r.amount)}</div>
         </div>
       `).join("");
-      statusEl.textContent = "";
-    } catch (e) { 
-      statusEl.textContent = "Error loading list";
-      console.error(e);
-    }
+      $("status").textContent = "";
+    } catch (e) { $("status").textContent = "Error loading list"; }
+  }
+
+  async function refreshCategories() {
+    try {
+      const data = await apiCall("get_budgets");
+      const select = $("category"); // Matches HTML id="category"
+      if (select && data.ok) {
+        select.innerHTML = '<option value="">Select Category</option>' + 
+          data.data.map(b => `<option value="${b.category}">${b.category}</option>`).join("");
+      }
+    } catch (err) { console.error(err); }
   }
 
   async function addExpense() {
     const amount = $("amount").value;
-    if (!amount) return alert("Enter an amount");
+    if (!amount) return alert("Enter amount");
     $("addBtn").disabled = true;
     try {
-      const json = await apiCall({ action: "add" }, {
+      const res = await apiCall("add", {
         date: $("date").value,
         amount,
         category: $("category").value,
         description: $("description").value
-      });
-      if (json.ok) {
-        $("amount").value = "";
-        $("description").value = "";
-        statusEl.textContent = "Saved ✔";
+      }, 'POST');
+      if (res.ok) {
+        $("amount").value = ""; $("description").value = "";
         refresh();
       }
     } catch (e) { alert("Save failed"); }
     $("addBtn").disabled = false;
   }
 
-async function refreshCategories() {
-    const user = window.Clerk.user;
-    if (!user) return;
-
-    try {
-        const data = await apiCall(`?action=get_budgets&user_id=${user.id}`);
-        const select = document.getElementById('categorySelect'); // <-- DOUBLE CHECK THIS ID
-        
-        if (select && data.ok) {
-            select.innerHTML = '<option value="">Select Category</option>';
-            data.data.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b.category;
-                opt.textContent = b.category;
-                select.appendChild(opt);
-            });
-        }
-    } catch (err) {
-        console.error("Failed to load categories:", err);
-    }
-}
-
-  async function loadSummary() {
-    $("sumStatus").textContent = "Loading...";
-    try {
-      const json = await apiCall({ action: "summary" });
-      if (!json.ok) throw new Error(json.error);
-      
-      summaryModel = json;
-      const picker = $("monthPick");
-      
-      if (!json.months || json.months.length === 0) {
-        $("sumStatus").textContent = "No data found.";
-        $("sumCards").innerHTML = "";
-        $("sumTotals").innerHTML = "";
-        picker.innerHTML = "";
-        return;
-      }
-
-      picker.innerHTML = json.months.map((m, i) => `<option value="${i}">${m.month}</option>`).join("");
-      picker.onchange = () => renderSummaryForIndex(picker.value);
-      
-      renderSummaryForIndex(0);
-      $("sumStatus").textContent = "";
-    } catch (e) { 
-      $("sumStatus").textContent = "Error: " + e.message; 
-    }
-  }
-
-  function renderSummaryForIndex(idx) {
-    if (!summaryModel || !summaryModel.months || !summaryModel.months[idx]) return;
-    const m = summaryModel.months[idx];
-    const budgets = summaryModel.budgets || {};
-    const categories = summaryModel.categories || [];
-    const monthKey = monthKeyFromLabel(m.month);
-
-    $("sumCards").innerHTML = categories.map(cat => {
-      const b = budgets[cat] || 0;
-      const s = m.totals[cat] || 0;
-      const pct = b > 0 ? Math.min(100, (s / b) * 100) : 0;
-      return `
-        <div class="card2">
-          <div class="row2"><b>${escapeHtml(cat)}</b> <span>${fmtGBP(s)}</span></div>
-          <div class="row2 small muted">Budget: ${fmtGBP(b)}</div>
-          <div class="bar"><div style="width:${pct}%; background:${pct >= 100 ? '#ff4444' : '#111'}"></div></div>
-        </div>`;
-    }).join("");
-
-    const totalSpent = Object.values(m.totals).reduce((a, b) => a + b, 0);
-    $("sumTotals").innerHTML = `<b>Total Spent: ${fmtGBP(totalSpent)}</b>`;
-  }
-
-  // 5. HELPERS
-  function setToday() {
-    $("date").value = new Date().toISOString().split('T')[0];
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
-  }
-
-  function fmtGBP(n){
-    return Number(n).toLocaleString(undefined,{style:"currency",currency:"GBP"});
-  }
-
-  function monthKeyFromLabel(label){
-    const parts = String(label).trim().split(/\s+/);
-    if (parts.length < 2) return "";
-    const map = { jan:"01", feb:"02", mar:"03", apr:"04", may:"05", jun:"06", jul:"07", aug:"08", sep:"09", oct:"10", nov:"11", dec:"12" };
-    return `${parts[1]}-${map[parts[0].slice(0,3).toLowerCase()] || "01"}`;
-  }
-
-  function setTab(name) {
-    ["Entry", "Summary", "Settings"].forEach(t => {
-      $(`tab${t}Btn`).classList.toggle("active", name === t.toLowerCase());
-      $(`tab${t}`).classList.toggle("active", name === t.toLowerCase());
-    });
-    if (name === "summary") loadSummary();
-    if (name === "settings") refreshCategories();
-  }
-
-  // 6. INITIALIZATION & EVENTS
-  function init() {
-    setToday();
-    refresh();
-    refreshCategories();
-
-    $("addBtn").onclick = addExpense;
-    $("saveBudgetBtn").onclick = async () => {
-      const category = $("newCatName").value.trim();
-      const amount = $("newCatAmount").value;
-      if (!category || !amount) return alert("Fill all fields");
-      await apiCall({ action: "set_budget" }, { category, amount });
-      $("newCatName").value = ""; $("newCatAmount").value = "";
-      refreshCategories();
-    };
-
-    $("tabEntryBtn").onclick = () => setTab("entry");
-    $("tabSummaryBtn").onclick = () => setTab("summary");
-    $("tabSettingsBtn").onclick = () => setTab("settings");
-  }
+  // ... (Keep your summary/loadSummary/fmtGBP/init/setTab functions exactly as they are)
 </script>
 </body>
 </html>
