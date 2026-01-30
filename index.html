@@ -112,7 +112,7 @@
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   margin-bottom:10px;
 }
-.summaryTitle{ font-weight:800; font-size:18px; }
+.summaryTitle{ font-weight:600; font-size:18px; }
 .monthPick{ max-width: 220px; }
 
 .cards{ display:flex; flex-direction:column; gap:10px; }
@@ -122,8 +122,8 @@
   display:flex; flex-direction:column; gap:8px;
 }
 .row2{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
-.kpi{ font-weight:800; font-variant-numeric: tabular-nums; }
-.muted{ opacity:.75; font-size:12px; }
+.kpi{ font-weight:600; font-variant-numeric: tabular-nums; }
+.muted{ opacity:.75; font-size:18px; }
 
 .bar{
   height:10px; background:#eee; border-radius:999px; overflow:hidden;
@@ -131,8 +131,9 @@
 .bar > div{ height:100%; width:0%; background:#111; border-radius:999px; }
 
 .pill{
-  font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #eee;
+  font-size:16px; padding:4px 8px; border-radius:999px; border:1px solid #eeeeee;
   display:inline-block;
+  background-color: rgb(186, 238, 238);
 }
 
 .totalsCard{
@@ -484,7 +485,7 @@ function renderSummaryForIndex(idx){
     return `
       <div class="card2">
         <div class="row2">
-          <div style="font-weight:800;">${escapeHtml(cat)}</div>
+          <div style="font-weight:600;">${escapeHtml(cat)}</div>
           <div class="kpi">${fmtGBP(s)}</div>
         </div>
         <div class="row2">
