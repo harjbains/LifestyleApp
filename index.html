@@ -41,6 +41,32 @@
     .pill{ font-size:16px; padding:4px 8px; border-radius:999px; border:1px solid #eeeeee; display:inline-block; background-color: rgb(177, 223, 223); }
     .totalsCard{ margin-top:12px; border:1px solid #ddd; border-radius:12px; padding:12px;  }
     #detailList .item { border-top: 1px solid #eee; }
+
+    /* Fix for iPhone input height and overlap */
+input, select {
+  height: 44px; /* Force a consistent height for all inputs */
+  -webkit-appearance: none; /* Remove default iOS inner shadows */
+  appearance: none;
+}
+
+/* Specific fix for the Date and Amount row */
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: flex-end; /* Ensures labels and inputs align at the bottom */
+}
+
+.date-col, .amt-col {
+  flex: 1; /* Give them equal weight */
+  min-width: 0; /* Prevents date input from 'pushing' past its container */
+}
+
+/* Ensure the actual input doesn't spill out of its column */
+input#date, input#amount {
+  width: 100%;
+  display: block;
+}
   </style>
 </head>
 <body>
