@@ -54,7 +54,7 @@
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div style="font-weight:700;">Quick Expense 1978</div>
+      <div style="font-weight:700;">Quick Expense 2001</div>
       <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
@@ -236,20 +236,21 @@ script.onload = async () => {
   }
 
   async function refreshCategories() {
-    try {
-      const json = await apiCall({ action: "get_budgets" });
-      const cats = json.data || [];
-      $("category").innerHTML = '<option value="">Select…</option>' + 
-        cats.map(c => `<option value="${escapeHtml(c.category)}">${escapeHtml(c.category)}</option>`).join("");
-      
-      $("budgetList").innerHTML = cats.map(c => `
-        <div class="item">
-          <div class="left"><div style="font-weight:600;">${escapeHtml(c.category)}</div></div>
-          <div class="amt" style="font-weight:700;">${fmtGBP(c.amount)}</div>
-        </div>
-      `).join("");
-    } catch (e) { console.error(e); }
+  const user = window.Clerk.user; // Always get the current Clerk user
+  if (!user) return;
+
+  const response = await apiCall(`?action=get_budgets&user_id=${user.id}`);
+  if (response.ok) {
+    const select = document.getElementById('categorySelect'); // Or your category dropdown ID
+    select.innerHTML = '<option value="">Select Category</option>';
+    response.data.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.category;
+      opt.textContent = b.category;
+      select.appendChild(opt);
+    });
   }
+}
 
   async function loadSummary() {
     $("sumStatus").textContent = "Loading...";
