@@ -5,282 +5,144 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Expense Quick Log</title>
   <style>
-  body {
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    margin: 12px;
-  }
-
-  .card {
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 12px;
-    max-width: 520px;
-  }
-
-  /* Flex rows */
-  .row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;            /* allow wrapping */
-  }
-
-  /* Allow children to shrink (critical for iOS) */
-  .row > div {
-    flex: 1;
-    min-width: 0;
-  }
-
-  label {
-    display: block;
-    font-size: 12px;
-    opacity: .8;
-    margin-bottom: 4px;
-  }
-
-  input, select, button {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-  }
-
-  /* iOS date input fix */
-  input[type="date"] {
-    min-width: 0;
-  }
-
-  button { cursor: pointer; }
-
-  .small { font-size: 12px; opacity: .8; }
-
-  .list { margin-top: 12px; }
-
-  .item {
-    padding: 10px 0;
-    border-top: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .left { min-width: 0; }
-
-  .desc {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 320px;
-  }
-
-  .amt { font-variant-numeric: tabular-nums; }
-
-  .topline {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  /* Stack only the Date + Amount row on small screens */
-  @media (max-width: 420px) {
-    .row.stack-sm { flex-direction: column; }
-  }
-
-    /* Allow flex children to shrink properly on iOS */
-.row > div { min-width: 0; }
-
-/* Make Amount a fixed-width column like the Save token button */
-.amt-col { flex: 0 0 140px; max-width: 160px; }
-
-/* Date takes remaining width */
-.date-col { flex: 1 1 auto; }
-
-/* iOS date input sometimes refuses to shrink without this */
-.date-col input[type="date"] { min-width: 0; width: 100%; }
-
-.tabs { display:flex; gap:8px; margin-bottom:10px; }
-.tab { flex:1; padding:10px; border-radius:10px; border:1px solid #ccc; background:#fff; }
-.tab.active { font-weight:700; background:#f5f5f5; }
-.tabPanel { display:none; }
-.tabPanel.active { display:block; }
-
-.summaryTop{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  margin-bottom:10px;
-}
-.summaryTitle{ font-weight:600; font-size:18px; }
-.monthPick{ max-width: 220px; }
-
-.cards{ display:flex; flex-direction:column; gap:10px; }
-
-.card2{
-  border:1px solid #eee; border-radius:12px; padding:12px;
-  display:flex; flex-direction:column; gap:8px;
-}
-.row2{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
-.kpi{ font-weight:600; font-variant-numeric: tabular-nums; }
-.muted{ opacity:.75; font-size:18px; }
-
-.bar{
-  height:10px; background:#eee; border-radius:999px; overflow:hidden;
-}
-.bar > div{ height:100%; width:0%; background:#111; border-radius:999px; }
-
-.pill{
-  font-size:16px; padding:4px 8px; border-radius:999px; border:1px solid #eeeeee;
-  display:inline-block;
-  background-color: rgb(186, 238, 238);
-}
-
-.totalsCard{
-  margin-top:12px;
-  border:1px solid #ddd; border-radius:12px; padding:12px;
-}
-
-#detailList .item { border-top: 1px solid #eee; }
-
-</style>
-
-
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; max-width: 520px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .row > div { flex: 1; min-width: 0; }
+    label { display: block; font-size: 12px; opacity: .8; margin-bottom: 4px; }
+    input, select, button { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
+    input[type="date"] { min-width: 0; }
+    button { cursor: pointer; }
+    .small { font-size: 12px; opacity: .8; }
+    .list { margin-top: 12px; }
+    .item { padding: 10px 0; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 10px; }
+    .left { min-width: 0; }
+    .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+    .amt { font-variant-numeric: tabular-nums; }
+    .topline { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+    @media (max-width: 420px) { .row.stack-sm { flex-direction: column; } }
+    .amt-col { flex: 0 0 140px; max-width: 160px; }
+    .date-col { flex: 1 1 auto; }
+    .tabs { display:flex; gap:8px; margin-bottom:10px; }
+    .tab { flex:1; padding:10px; border-radius:10px; border:1px solid #ccc; background:#fff; }
+    .tab.active { font-weight:700; background:#f5f5f5; }
+    .tabPanel { display:none; }
+    .tabPanel.active { display:block; }
+    .summaryTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .summaryTitle{ font-weight:600; font-size:18px; }
+    .monthPick{ max-width: 220px; }
+    .cards{ display:flex; flex-direction:column; gap:10px; }
+    .card2{ border:1px solid #eee; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; cursor: pointer; }
+    .row2{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
+    .kpi{ font-weight:600; font-variant-numeric: tabular-nums; }
+    .muted{ opacity:.75; font-size:18px; }
+    .bar{ height:10px; background:#eee; border-radius:999px; overflow:hidden; }
+    .bar > div{ height:100%; width:0%; background:#111; border-radius:999px; }
+    .pill{ font-size:16px; padding:4px 8px; border-radius:999px; border:1px solid #eeeeee; display:inline-block; background-color: rgb(186, 238, 238); }
+    .totalsCard{ margin-top:12px; border:1px solid #ddd; border-radius:12px; padding:12px; }
+    #detailList .item { border-top: 1px solid #eee; }
+  </style>
 </head>
 <body>
-  <div class="tabs">
-  <button class="tab active" id="tabEntryBtn" type="button">Entry</button>
-  <button class="tab" id="tabSummaryBtn" type="button">Summary</button>
+
+<div class="tabs">
+  <button class="tab active" id="tabEntryBtn">Entry</button>
+  <button class="tab" id="tabSummaryBtn">Summary</button>
+  <button class="tab" id="tabSettingsBtn">Settings</button>
 </div>
 
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div>
-        <div style="font-weight:700;">Quick Expense</div>
-        
-      </div>
-      <select id="mode" title="List mode">
+      <div style="font-weight:700;">Quick Expense</div>
+      <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
       </select>
     </div>
-
-    <div class="row">
-  <div>
-    <label for="token">Token (saved on this device)</label>
-    <input id="token" type="password" placeholder="Enter token once" />
-  </div>
-  <div style="max-width:160px;">
-    <label>&nbsp;</label>
-    <button id="saveTokenBtn" type="button">Save token</button>
-  </div>
-</div>
-
     <div class="row">
       <div class="date-col">
-        <label for="date">Date</label>
+        <label>Date</label>
         <input id="date" type="date" />
       </div>
-     <div class="amt-col">
-        <label for="amount">Amount (£)</label>
+      <div class="amt-col">
+        <label>Amount (£)</label>
         <input id="amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" />
       </div>
     </div>
-
     <div class="row">
       <div>
-        <label for="category">Category</label>
-        <select id="category">
-          <option value="">Select…</option>
-          <option>Groceries</option>
-          <option>Transport</option>
-          <option>Health</option>
-          <option>Social</option>
-          <option>Household</option>
-          <option>Other</option>
-        </select>
+        <label>Category</label>
+        <select id="category"><option value="">Loading categories...</option></select>
       </div>
     </div>
-
     <div class="row">
       <div>
-        <label for="description">Description</label>
+        <label>Description</label>
         <input id="description" type="text" placeholder="Asda, petrol, Amazon…" />
       </div>
     </div>
-
     <div class="row">
       <button id="addBtn">+ Add expense</button>
     </div>
-
     <div id="status" class="small"></div>
-
     <div class="list">
       <div style="font-weight:700; margin-top:10px;">Latest entries</div>
       <div id="items"></div>
     </div>
   </div>
-
 </section>
 
 <section id="tabSummary" class="tabPanel">
   <div class="summaryTop">
-  <div class="summaryTitle">Summary</div>
-  <select id="monthPick" class="monthPick"></select>
-</div>
-
-<div id="sumStatus" class="small"></div>
-
-<div id="sumCards" class="cards"></div>
-
-<div id="sumTotals" class="totalsCard"></div>
-
-<div id="detailTitle" style="font-weight:700; margin-top:12px;"></div>
-<div id="detailStatus" class="small"></div>
-<div id="detailList" class="list"></div>
+    <div class="summaryTitle">Summary</div>
+    <select id="monthPick" class="monthPick"></select>
+  </div>
+  <div id="sumStatus" class="small"></div>
+  <div id="sumCards" class="cards"></div>
+  <div id="sumTotals" class="totalsCard"></div>
+  <div id="detailTitle" style="font-weight:700; margin-top:12px;"></div>
+  <div id="detailStatus" class="small"></div>
+  <div id="detailList" class="list"></div>
 </section>
+
+<section id="tabSettings" class="tabPanel">
+  <div class="card">
+    <div style="font-weight:700; margin-bottom:10px;">Manage Categories & Budgets</div>
+    <div class="row">
+      <div>
+        <label>Category Name</label>
+        <input id="newCatName" type="text" placeholder="e.g. Rent">
+      </div>
+      <div>
+        <label>Monthly Budget (£)</label>
+        <input id="newCatAmount" type="number" placeholder="0.00">
+      </div>
+    </div>
+    <button id="saveBudgetBtn">Save Category</button>
+    <div id="budgetList" class="list"></div>
+  </div>
+</section>
+
 <script>
   const $ = (id) => document.getElementById(id);
-
-  // Cloudflare Worker URL (NO trailing slash is cleaner)
   const API_URL = "https://odd-wind-5e5a.harjbains.workers.dev";
-
   const statusEl = $("status");
   const itemsEl = $("items");
 
-  // Token UI (optional). Worker already injects token, but keeping this won't hurt if Worker ignores it.
-  let TOKEN = localStorage.getItem("expense_token") || "";
-
-  function syncTokenUI() {
-    const t = $("token");
-    if (t) t.value = TOKEN;
+  let USER_ID = localStorage.getItem("uid");
+  if (!USER_ID) {
+    USER_ID = crypto.randomUUID();
+    localStorage.setItem("uid", USER_ID);
   }
-
-  $("saveTokenBtn").addEventListener("click", () => {
-    TOKEN = ($("token").value || "").trim();
-    localStorage.setItem("expense_token", TOKEN);
-    statusEl.textContent = TOKEN ? "Token saved ✔" : "Token cleared.";
-    refresh();
-  });
 
   function setToday() {
     const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    $("date").value = `${yyyy}-${mm}-${dd}`;
+    $("date").value = d.toISOString().split('T')[0];
   }
 
   function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-    }[c]));
-  }
-
-  function parseMoney(val){
-    const n = Number(String(val).replace(/[^0-9.\-]/g, ""));
-    return isFinite(n) ? n : 0;
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
   }
 
   function fmtGBP(n){
@@ -288,270 +150,182 @@
   }
 
   function monthKeyFromLabel(label){
-    // expects "Jan 2026"
     const parts = String(label).trim().split(/\s+/);
     if (parts.length < 2) return "";
     const mStr = parts[0].slice(0,3).toLowerCase();
-    const year = parts[1];
-    const map = { jan:"01", feb:"02", mar:"03", apr:"04", may:"05", jun:"06",
-                  jul:"07", aug:"08", sep:"09", oct:"10", nov:"11", dec:"12" };
-    return `${year}-${map[mStr] || "01"}`;
+    const map = { jan:"01", feb:"02", mar:"03", apr:"04", may:"05", jun:"06", jul:"07", aug:"08", sep:"09", oct:"10", nov:"11", dec:"12" };
+    return `${parts[1]}-${map[mStr] || "01"}`;
   }
 
-  // ---------- API helpers ----------
-  async function apiGet(params){
+  async function apiGet(params) {
     const url = new URL(API_URL);
-    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-    // optional: still send token if you want; Worker can ignore
-    if (TOKEN) url.searchParams.set("token", TOKEN);
-
-    const res = await fetch(url.toString(), { method: "GET" });
-    const text = await res.text();
-    try { return JSON.parse(text); }
-    catch { throw new Error("Non-JSON response: " + text.slice(0, 120)); }
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    url.searchParams.set("user_id", USER_ID);
+    const res = await fetch(url);
+    return res.json();
   }
 
-  async function apiPost(params){
-    const body = new URLSearchParams(params);
-    if (TOKEN) body.set("token", TOKEN); // optional
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: body.toString()
-    });
-    const text = await res.text();
-    try { return JSON.parse(text); }
-    catch { throw new Error("Non-JSON response: " + text.slice(0, 120)); }
+async function apiPost(params) {
+  const body = new URLSearchParams();
+  // Spread existing params + add user_id
+  const fullParams = { ...params, user_id: USER_ID };
+  
+  for (const [key, value] of Object.entries(fullParams)) {
+    body.append(key, value);
   }
 
-  // ---------- Entry ----------
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString()
+  });
+  return res.json();
+}
+
+  // --- REFRESH DATA ---
   async function refresh() {
-    const mode = $("mode").value;
     statusEl.textContent = "Loading…";
-    itemsEl.innerHTML = "";
-
-    const json = await apiGet({ action: "list", mode });
-
-    if (!json.ok) {
-      statusEl.textContent = `Error: ${json.error || "Unknown"}`;
-      return;
-    }
-
-    const data = json.data || [];
-    statusEl.textContent = mode === "today"
-      ? (data.length ? `Showing ${data.length} from today.` : "No entries yet today.")
-      : (data.length ? `Showing latest ${data.length} entries.` : "No entries yet.");
-
-    itemsEl.innerHTML = data.map(r => {
-      const cat = escapeHtml(r.category || "");
-      const desc = escapeHtml(r.description || "");
-      const amt = fmtGBP(r.amount || 0);
-      return `
+    try {
+      const json = await apiGet({ action: "list" });
+      if (!json.ok) throw new Error(json.error);
+      itemsEl.innerHTML = json.data.map(r => `
         <div class="item">
           <div class="left">
-            <div style="font-weight:600;">${cat || "—"}</div>
-            <div class="small desc">${desc || "—"}</div>
+            <div style="font-weight:600;">${escapeHtml(r.category)}</div>
+            <div class="small desc">${escapeHtml(r.description)}</div>
           </div>
-          <div class="amt" style="font-weight:700;">${amt}</div>
+          <div class="amt" style="font-weight:700;">${fmtGBP(r.amount)}</div>
         </div>
-      `;
-    }).join("");
+      `).join("");
+      statusEl.textContent = "";
+    } catch (e) { statusEl.textContent = "Error loading list"; }
   }
 
   async function addExpense() {
-    const date = $("date").value;
     const amount = $("amount").value;
-    const category = $("category").value;
-    const description = $("description").value;
-    const mode = $("mode").value;
-
-    if (!amount) { statusEl.textContent = "Enter an amount."; return; }
-
+    if (!amount) return alert("Enter an amount");
     $("addBtn").disabled = true;
-    statusEl.textContent = "Saving…";
-
-    const json = await apiPost({
-      action: "add",
-      date, amount, category, description, mode
-    });
-
+    try {
+      const json = await apiPost({
+        action: "add",
+        date: $("date").value,
+        amount,
+        category: $("category").value,
+        description: $("description").value
+      });
+      if (json.ok) {
+        $("amount").value = "";
+        $("description").value = "";
+        statusEl.textContent = "Saved ✔";
+        refresh();
+      }
+    } catch (e) { alert("Save failed"); }
     $("addBtn").disabled = false;
+  }
 
-    if (!json.ok) {
-      statusEl.textContent = `Error: ${json.error || "Unknown"}`;
+  // --- SETTINGS / CATEGORIES ---
+  async function refreshCategories() {
+    try {
+      const json = await apiGet({ action: "get_budgets" });
+      const cats = json.data || [];
+      $("category").innerHTML = '<option value="">Select…</option>' + 
+        cats.map(c => `<option value="${escapeHtml(c.category)}">${escapeHtml(c.category)}</option>`).join("");
+      
+      $("budgetList").innerHTML = cats.map(c => `
+        <div class="item">
+          <div class="left"><div style="font-weight:600;">${escapeHtml(c.category)}</div></div>
+          <div class="amt" style="font-weight:700;">${fmtGBP(c.amount)}</div>
+        </div>
+      `).join("");
+    } catch (e) { console.error(e); }
+  }
+
+  $("saveBudgetBtn").addEventListener("click", async () => {
+    const category = $("newCatName").value.trim();
+    const amount = $("newCatAmount").value;
+    if (!category || !amount) return alert("Fill all fields");
+    await apiPost({ action: "set_budget", category, amount });
+    $("newCatName").value = ""; $("newCatAmount").value = "";
+    refreshCategories();
+  });
+
+  // --- TABS ---
+  function setTab(name) {
+    ["Entry", "Summary", "Settings"].forEach(t => {
+      $(`tab${t}Btn`).classList.toggle("active", name === t.toLowerCase());
+      $(`tab${t}`).classList.toggle("active", name === t.toLowerCase());
+    });
+    if (name === "summary") loadSummary();
+    if (name === "settings") refreshCategories();
+  }
+
+  $("tabEntryBtn").addEventListener("click", () => setTab("entry"));
+  $("tabSummaryBtn").addEventListener("click", () => setTab("summary"));
+  $("tabSettingsBtn").addEventListener("click", () => setTab("settings"));
+
+  // --- SUMMARY ---
+  let summaryModel = null;
+  async function loadSummary() {
+  $("sumStatus").textContent = "Loading...";
+  try {
+    const json = await apiGet({ action: "summary" });
+    if (!json.ok) throw new Error(json.error);
+    
+    summaryModel = json;
+    const picker = $("monthPick");
+    
+    if (!json.months || json.months.length === 0) {
+      $("sumStatus").textContent = "No data found. Add some expenses first!";
+      $("sumCards").innerHTML = "";
+      $("sumTotals").innerHTML = "";
+      picker.innerHTML = "";
       return;
     }
 
-    $("amount").value = "";
-    $("description").value = "";
-    $("category").value = "";
-
-    statusEl.textContent = "Saved ✔";
-    await refresh();
-  }
-
-  $("addBtn").addEventListener("click", () => addExpense());
-  $("mode").addEventListener("change", refresh);
-
-  // ---------- Tabs ----------
-  function setTab(name) {
-    $("tabEntryBtn").classList.toggle("active", name === "entry");
-    $("tabSummaryBtn").classList.toggle("active", name === "summary");
-    $("tabEntry").classList.toggle("active", name === "entry");
-    $("tabSummary").classList.toggle("active", name === "summary");
-    if (name === "summary") loadSummary();
-  }
-  $("tabEntryBtn").addEventListener("click", () => setTab("entry"));
-  $("tabSummaryBtn").addEventListener("click", () => setTab("summary"));
-
-  // ---------- Summary + Drilldown ----------
-  let summaryModel = null;
-
-let summaryLoadedAt = 0;
-
-async function loadSummary() {
-  const now = Date.now();
-  if (now - summaryLoadedAt < 30_000 && summaryModel) return; // 30s
-  summaryLoadedAt = now;
-    const status = $("sumStatus");
-    const cards = $("sumCards");
-    const totals = $("sumTotals");
-    const picker = $("monthPick");
-
-    status.textContent = "Loading…";
-    cards.innerHTML = "";
-    totals.innerHTML = "";
-    picker.innerHTML = "";
-
-    $("detailTitle").textContent = "";
-    $("detailStatus").textContent = "";
-    $("detailList").innerHTML = "";
-
-    const json = await apiGet({ action: "summary" });
-
-    if (!json.ok) { status.textContent = `Error: ${json.error || "Unknown"}`; return; }
-
-    const rows = json.table || [];
-    if (rows.length < 3) { status.textContent = "No summary data found."; return; }
-
-    const headers = rows[0].map(x => String(x).trim());
-    const budgetRow = rows[1];
-    const monthRows = rows.slice(2).filter(r => String(r[0]||"").trim());
-
-    const categories = headers.slice(1, -1);
-    const budgets = {};
-    categories.forEach((cat, i) => budgets[cat] = parseMoney(budgetRow[i+1]));
-
-    const model = monthRows.map(r => {
-      const month = String(r[0]).trim();
-      const spent = {};
-      categories.forEach((cat, i) => spent[cat] = parseMoney(r[i+1]));
-      return { month, spent };
-    });
-
-    summaryModel = { categories, budgets, months: model };
-
-    model.forEach((m, idx) => {
-      const opt = document.createElement("option");
-      opt.value = String(idx);
-      opt.textContent = m.month;
-      picker.appendChild(opt);
-    });
-
-    picker.value = "0";
-    status.textContent = "";
-
-    picker.onchange = () => renderSummaryForIndex(Number(picker.value));
+    picker.innerHTML = json.months.map((m, i) => `<option value="${i}">${m.month}</option>`).join("");
+    picker.onchange = () => renderSummaryForIndex(picker.value);
+    
     renderSummaryForIndex(0);
+    $("sumStatus").textContent = "";
+  } catch (e) { 
+    $("sumStatus").textContent = "Error loading summary: " + e.message; 
+  }
+}
+
+function renderSummaryForIndex(idx) {
+  if (!summaryModel || !summaryModel.months || !summaryModel.months[idx]) return;
+
+  const m = summaryModel.months[idx];
+  const budgets = summaryModel.budgets || {};
+  const categories = summaryModel.categories || []; // Safety fallback
+  const monthKey = monthKeyFromLabel(m.month);
+
+  if (categories.length === 0) {
+    $("sumCards").innerHTML = "<p class='small'>No categories found. Add budgets in Settings!</p>";
+    return;
   }
 
-  function renderSummaryForIndex(idx){
-    const status = $("sumStatus");
-    const cards = $("sumCards");
-    const totals = $("sumTotals");
+  $("sumCards").innerHTML = categories.map(cat => {
+    const b = budgets[cat] || 0;
+    const s = m.totals[cat] || 0;
+    const pct = b > 0 ? Math.min(100, (s / b) * 100) : 0;
+    return `
+      <div class="card2" onclick="showCategoryDetails('${encodeURIComponent(cat)}','${encodeURIComponent(monthKey)}','${encodeURIComponent(m.month)}')">
+        <div class="row2"><b>${escapeHtml(cat)}</b> <span>${fmtGBP(s)}</span></div>
+        <div class="row2 small muted">Budget: ${fmtGBP(b)}</div>
+        <div class="bar"><div style="width:${pct}%; background:${pct > 100 ? 'red' : '#111'}"></div></div>
+      </div>`;
+  }).join("");
 
-    if (!summaryModel) return;
-    const { categories, budgets, months } = summaryModel;
-    const m = months[idx];
-    if (!m) { status.textContent = "Month not found."; return; }
+  const totalSpent = Object.values(m.totals).reduce((a, b) => a + b, 0);
+  $("sumTotals").innerHTML = `<b>Total Spent: ${fmtGBP(totalSpent)}</b>`;
+}
 
-    const monthKey = monthKeyFromLabel(m.month);
-
-    cards.innerHTML = categories.map(cat => {
-      const b = budgets[cat] || 0;
-      const s = m.spent[cat] || 0;
-      const rem = b - s;
-      const pct = b > 0 ? Math.max(0, Math.min(100, (s / b) * 100)) : 0;
-
-      const pillText = rem >= 0 ? `${fmtGBP(rem)} left` : `${fmtGBP(-rem)} over`;
-
-      return `
-        <div class="card2" style="cursor:pointer;"
-          onclick="showCategoryDetails('${encodeURIComponent(cat)}','${encodeURIComponent(monthKey)}','${encodeURIComponent(m.month)}')">
-          <div class="row2">
-            <div style="font-weight:600;">${escapeHtml(cat)}</div>
-            <div class="kpi">${fmtGBP(s)}</div>
-          </div>
-          <div class="row2">
-            <div class="muted">Budget ${fmtGBP(b)}</div>
-            <span class="pill">${pillText}</span>
-          </div>
-          <div class="bar"><div style="width:${pct}%;"></div></div>
-        </div>
-      `;
-    }).join("");
-
-    const budgetTotal = categories.reduce((acc,c)=>acc+(budgets[c]||0),0);
-    const spentTotal = categories.reduce((acc,c)=>acc+(m.spent[c]||0),0);
-    const remTotal = budgetTotal - spentTotal;
-
-    totals.innerHTML = `
-      <div style="font-weight:800; font-size:16px; margin-bottom:8px;">Totals — ${escapeHtml(m.month)}</div>
-      <div class="row2"><div class="muted">Spent</div><div class="kpi">${fmtGBP(spentTotal)}</div></div>
-      <div class="row2"><div class="muted">Budget</div><div class="kpi">${fmtGBP(budgetTotal)}</div></div>
-      <div class="row2"><div class="muted">${remTotal>=0 ? "Remaining" : "Over"}</div><div class="kpi">${fmtGBP(Math.abs(remTotal))}</div></div>
-    `;
-  }
-
-  // Must be global because we call it from onclick=""
-  window.showCategoryDetails = async function(catEnc, monthKeyEnc, monthLabelEnc){
-    const category = decodeURIComponent(catEnc);
-    const monthKey = decodeURIComponent(monthKeyEnc);
-    const monthLabel = decodeURIComponent(monthLabelEnc);
-
-    $("detailTitle").textContent = `${category} — ${monthLabel}`;
-    $("detailStatus").textContent = "Loading…";
-    $("detailList").innerHTML = "";
-
-    const json = await apiGet({ action: "txns", month: monthKey, category });
-
-    if (!json.ok) { $("detailStatus").textContent = `Error: ${json.error || "Unknown"}`; return; }
-
-    const rows = json.data || [];
-    $("detailStatus").textContent = rows.length ? `Showing ${rows.length} items.` : "No items found.";
-
-    $("detailList").innerHTML = rows.map(r => `
-      <div class="item">
-        <div class="left">
-          <div style="font-weight:600;">${escapeHtml(r.date || "")}</div>
-          <div class="small desc">${escapeHtml(r.description || "")}</div>
-        </div>
-        <div class="amt" style="font-weight:700;">${fmtGBP(r.amount || 0)}</div>
-      </div>
-    `).join("");
-  };
-
-  // Init
+  // --- INIT ---
   setToday();
-  syncTokenUI();
   refresh();
-
-// 🔥 Warm up backend (AFTER apiGet exists)
-setTimeout(() => {
- // apiGet({ action: "list", mode: "all" }).catch(() => {});
-}, 0);
+  refreshCategories();
+  $("addBtn").addEventListener("click", addExpense);
 </script>
-
 </body>
 </html>
