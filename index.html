@@ -100,7 +100,7 @@
 .date-col { flex: 1 1 auto; }
 
 /* iOS date input sometimes refuses to shrink without this */
-.date-col input[type="date"] { min-width: 0; width: 90%; }
+.date-col input[type="date"] { min-width: 0; width: 100%; }
 
 .tabs { display:flex; gap:8px; margin-bottom:10px; }
 .tab { flex:1; padding:10px; border-radius:10px; border:1px solid #ccc; background:#fff; }
@@ -141,6 +141,7 @@
   border:1px solid #ddd; border-radius:12px; padding:12px;
 }
 
+#detailList .item { border-top: 1px solid #eee; }
 
 </style>
 
@@ -234,293 +235,313 @@
 <div id="sumCards" class="cards"></div>
 
 <div id="sumTotals" class="totalsCard"></div>
+
+<div id="detailTitle" style="font-weight:700; margin-top:12px;"></div>
+<div id="detailStatus" class="small"></div>
+<div id="detailList" class="list"></div>
 </section>
-  <script>
-    const $ = (id) => document.getElementById(id);
-    // 1) Paste your Apps Script Web App URL here:
-    //const API_URL = "https://script.google.com/macros/s/AKfycbxP_NiwGJPiex09bBCO23JX6h4SZWiHw_8fjpaFvrVyzcXX83OIWQ8rA_igHEJmjdBs/exec";
+<script>
+  const $ = (id) => document.getElementById(id);
 
-    const API_URL = "https://odd-wind-5e5a.harjbains.workers.dev/";
+  // Cloudflare Worker URL (NO trailing slash is cleaner)
+  const API_URL = "https://odd-wind-5e5a.harjbains.workers.dev";
 
-    const statusEl = $("status");
-    const itemsEl = $("items");
+  const statusEl = $("status");
+  const itemsEl = $("items");
 
-   let TOKEN = localStorage.getItem("expense_token") || "";
+  // Token UI (optional). Worker already injects token, but keeping this won't hurt if Worker ignores it.
+  let TOKEN = localStorage.getItem("expense_token") || "";
 
-function syncTokenUI() {
-  const t = document.getElementById("token");
-  if (t) t.value = TOKEN;
-}
+  function syncTokenUI() {
+    const t = $("token");
+    if (t) t.value = TOKEN;
+  }
 
-$("saveTokenBtn").addEventListener("click", () => {
-  TOKEN = ($("token").value || "").trim();
-  localStorage.setItem("expense_token", TOKEN);
-  statusEl.textContent = TOKEN ? "Token saved ✔" : "Token cleared.";
-  refresh();
-});
-
-
-   
-
-    
-    
-
-    function setToday() {
-      const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      $("date").value = `${yyyy}-${mm}-${dd}`;
-    }
-
-    function money(n) {
-      const v = Number(n);
-      if (!isFinite(v)) return "";
-      return v.toLocaleString(undefined, { style: "currency", currency: "GBP" });
-    }
-
-    function escapeHtml(s) {
-      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-      }[c]));
-    }
-
-    async function refresh() {
-      const mode = $("mode").value;
-      statusEl.textContent = "Loading…";
-      itemsEl.innerHTML = "";
-
-      const url = `${API_URL}?action=list&mode=${encodeURIComponent(mode)}&token=${encodeURIComponent(TOKEN)}`;
-
-
-      const res = await fetch(url, { method: "GET" });
-      const json = await res.json();
-
-      if (!json.ok) {
-        statusEl.textContent = `Error: ${json.error || "Unknown"}`;
-        return;
-      }
-
-      const data = json.data || [];
-      statusEl.textContent = mode === "today"
-        ? (data.length ? `Showing ${data.length} from today.` : "No entries yet today.")
-        : (data.length ? `Showing latest ${data.length} entries.` : "No entries yet.");
-
-      itemsEl.innerHTML = data.map(r => {
-        const cat = escapeHtml(r.category || "");
-        const desc = escapeHtml(r.description || "");
-        const amt = money(r.amount);
-        return `
-          <div class="item">
-            <div class="left">
-              <div style="font-weight:600;">${cat || "—"}</div>
-              <div class="small desc">${desc || "—"}</div>
-            </div>
-            <div class="amt" style="font-weight:700;">${amt}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    async function addExpense() {
-      const date = $("date").value;
-      const amount = $("amount").value;
-      const category = $("category").value;
-      const description = $("description").value;
-      const mode = $("mode").value;
-
-      if (!amount) { statusEl.textContent = "Enter an amount."; return; }
-
-      $("addBtn").disabled = true;
-      statusEl.textContent = "Saving…";
-
-      const payload = { action: "add", token: TOKEN, date, amount, category, description, mode };
-
-
-
-     const form = new URLSearchParams(payload);
-
-const res = await fetch(API_URL, {
-  method: "POST",
-  headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-  body: form.toString()
-});
-
-
-      const json = await res.json();
-      $("addBtn").disabled = false;
-
-      if (!json.ok) {
-        statusEl.textContent = `Error: ${json.error || "Unknown"}`;
-        return;
-      }
-
-      // Clear minimal fields for speed
-      $("amount").value = "";
-      $("description").value = "";
-      $("category").value = "";
-
-      statusEl.textContent = "Saved ✔";
-      await refresh();
-    }
-
- $("addBtn").addEventListener("click", () => {
-  $("status").textContent = "Button click detected ✅";
-  addExpense();
-});
-
-    $("mode").addEventListener("change", refresh);
-
-    setToday();
-    syncTokenUI();
-
+  $("saveTokenBtn").addEventListener("click", () => {
+    TOKEN = ($("token").value || "").trim();
+    localStorage.setItem("expense_token", TOKEN);
+    statusEl.textContent = TOKEN ? "Token saved ✔" : "Token cleared.";
     refresh();
-
-    function setTab(name) {
-  $("tabEntryBtn").classList.toggle("active", name === "entry");
-  $("tabSummaryBtn").classList.toggle("active", name === "summary");
-  $("tabEntry").classList.toggle("active", name === "entry");
-  $("tabSummary").classList.toggle("active", name === "summary");
-
-  if (name === "summary") loadSummary();
-}
-
-$("tabEntryBtn").addEventListener("click", () => setTab("entry"));
-$("tabSummaryBtn").addEventListener("click", () => setTab("summary"));
-
-
-function parseMoney(val){
-  // handles "£64.72", "0.00", "£0.00"
-  const n = Number(String(val).replace(/[^0-9.\-]/g, ""));
-  return isFinite(n) ? n : 0;
-}
-function fmtGBP(n){
-  return Number(n).toLocaleString(undefined,{style:"currency",currency:"GBP"});
-}
-
-let summaryModel = null;
-
-async function loadSummary() {
-  const status = $("sumStatus");
-  const cards = $("sumCards");
-  const totals = $("sumTotals");
-  const picker = $("monthPick");
-
-  status.textContent = "Loading…";
-  cards.innerHTML = "";
-  totals.innerHTML = "";
-  picker.innerHTML = "";
-
-  const url = `${API_URL}?action=summary&token=${encodeURIComponent(TOKEN)}`;
-  const res = await fetch(url);
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); }
-  catch { status.textContent = "Summary error (non-JSON)."; return; }
-
-  if (!json.ok) { status.textContent = `Error: ${json.error || "Unknown"}`; return; }
-
-  const rows = json.table || [];
-  if (rows.length < 3) { status.textContent = "No summary data found."; return; }
-
-  // Expect:
-  // row0: headers: Month, Grocery, Transport, Health, Social, Buffer, Total
-  // row1: Budget row
-  // row2+: months
-  const headers = rows[0].map(x => String(x).trim());
-  const budgetRow = rows[1];
-  const monthRows = rows.slice(2).filter(r => String(r[0]||"").trim());
-
-  const categories = headers.slice(1, -1); // exclude Month and Total
-  const budgets = {};
-  categories.forEach((cat, i) => budgets[cat] = parseMoney(budgetRow[i+1]));
-
-  const model = monthRows.map(r => {
-    const month = String(r[0]).trim();
-    const spent = {};
-    categories.forEach((cat, i) => spent[cat] = parseMoney(r[i+1]));
-    const total = parseMoney(r[headers.length-1]);
-    return { month, spent, total };
   });
 
-  summaryModel = { categories, budgets, months: model };
+  function setToday() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    $("date").value = `${yyyy}-${mm}-${dd}`;
+  }
 
-  // Populate picker
-  model.forEach((m, idx) => {
-    const opt = document.createElement("option");
-    opt.value = String(idx);
-    opt.textContent = m.month;
-    picker.appendChild(opt);
-  });
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+    }[c]));
+  }
 
-  // Default to first month row (your sheet likely has current month first)
-  picker.value = "0";
+  function parseMoney(val){
+    const n = Number(String(val).replace(/[^0-9.\-]/g, ""));
+    return isFinite(n) ? n : 0;
+  }
 
-  status.textContent = "";
+  function fmtGBP(n){
+    return Number(n).toLocaleString(undefined,{style:"currency",currency:"GBP"});
+  }
 
-  picker.onchange = () => renderSummaryForIndex(Number(picker.value));
-  renderSummaryForIndex(0);
-}
+  function monthKeyFromLabel(label){
+    // expects "Jan 2026"
+    const parts = String(label).trim().split(/\s+/);
+    if (parts.length < 2) return "";
+    const mStr = parts[0].slice(0,3).toLowerCase();
+    const year = parts[1];
+    const map = { jan:"01", feb:"02", mar:"03", apr:"04", may:"05", jun:"06",
+                  jul:"07", aug:"08", sep:"09", oct:"10", nov:"11", dec:"12" };
+    return `${year}-${map[mStr] || "01"}`;
+  }
 
-function renderSummaryForIndex(idx){
-  const status = $("sumStatus");
-  const cards = $("sumCards");
-  const totals = $("sumTotals");
+  // ---------- API helpers ----------
+  async function apiGet(params){
+    const url = new URL(API_URL);
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+    // optional: still send token if you want; Worker can ignore
+    if (TOKEN) url.searchParams.set("token", TOKEN);
 
-  if (!summaryModel) return;
-  const { categories, budgets, months } = summaryModel;
-  const m = months[idx];
-  if (!m) { status.textContent = "Month not found."; return; }
+    const res = await fetch(url.toString(), { method: "GET" });
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch { throw new Error("Non-JSON response: " + text.slice(0, 120)); }
+  }
 
-  // Build category cards
-  cards.innerHTML = categories.map(cat => {
-    const b = budgets[cat] || 0;
-    const s = m.spent[cat] || 0;
-    const rem = b - s;
-    const pct = b > 0 ? Math.max(0, Math.min(100, (s / b) * 100)) : 0;
+  async function apiPost(params){
+    const body = new URLSearchParams(params);
+    if (TOKEN) body.set("token", TOKEN); // optional
 
-    const pillText = rem >= 0 ? `${fmtGBP(rem)} left` : `${fmtGBP(-rem)} over`;
-    const pill = `<span class="pill">${pillText}</span>`;
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: body.toString()
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch { throw new Error("Non-JSON response: " + text.slice(0, 120)); }
+  }
 
-    return `
-      <div class="card2">
-        <div class="row2">
-          <div style="font-weight:600;">${escapeHtml(cat)}</div>
-          <div class="kpi">${fmtGBP(s)}</div>
+  // ---------- Entry ----------
+  async function refresh() {
+    const mode = $("mode").value;
+    statusEl.textContent = "Loading…";
+    itemsEl.innerHTML = "";
+
+    const json = await apiGet({ action: "list", mode });
+
+    if (!json.ok) {
+      statusEl.textContent = `Error: ${json.error || "Unknown"}`;
+      return;
+    }
+
+    const data = json.data || [];
+    statusEl.textContent = mode === "today"
+      ? (data.length ? `Showing ${data.length} from today.` : "No entries yet today.")
+      : (data.length ? `Showing latest ${data.length} entries.` : "No entries yet.");
+
+    itemsEl.innerHTML = data.map(r => {
+      const cat = escapeHtml(r.category || "");
+      const desc = escapeHtml(r.description || "");
+      const amt = fmtGBP(r.amount || 0);
+      return `
+        <div class="item">
+          <div class="left">
+            <div style="font-weight:600;">${cat || "—"}</div>
+            <div class="small desc">${desc || "—"}</div>
+          </div>
+          <div class="amt" style="font-weight:700;">${amt}</div>
         </div>
-        <div class="row2">
-          <div class="muted">Budget ${fmtGBP(b)}</div>
-          ${pill}
+      `;
+    }).join("");
+  }
+
+  async function addExpense() {
+    const date = $("date").value;
+    const amount = $("amount").value;
+    const category = $("category").value;
+    const description = $("description").value;
+    const mode = $("mode").value;
+
+    if (!amount) { statusEl.textContent = "Enter an amount."; return; }
+
+    $("addBtn").disabled = true;
+    statusEl.textContent = "Saving…";
+
+    const json = await apiPost({
+      action: "add",
+      date, amount, category, description, mode
+    });
+
+    $("addBtn").disabled = false;
+
+    if (!json.ok) {
+      statusEl.textContent = `Error: ${json.error || "Unknown"}`;
+      return;
+    }
+
+    $("amount").value = "";
+    $("description").value = "";
+    $("category").value = "";
+
+    statusEl.textContent = "Saved ✔";
+    await refresh();
+  }
+
+  $("addBtn").addEventListener("click", () => addExpense());
+  $("mode").addEventListener("change", refresh);
+
+  // ---------- Tabs ----------
+  function setTab(name) {
+    $("tabEntryBtn").classList.toggle("active", name === "entry");
+    $("tabSummaryBtn").classList.toggle("active", name === "summary");
+    $("tabEntry").classList.toggle("active", name === "entry");
+    $("tabSummary").classList.toggle("active", name === "summary");
+    if (name === "summary") loadSummary();
+  }
+  $("tabEntryBtn").addEventListener("click", () => setTab("entry"));
+  $("tabSummaryBtn").addEventListener("click", () => setTab("summary"));
+
+  // ---------- Summary + Drilldown ----------
+  let summaryModel = null;
+
+  async function loadSummary() {
+    const status = $("sumStatus");
+    const cards = $("sumCards");
+    const totals = $("sumTotals");
+    const picker = $("monthPick");
+
+    status.textContent = "Loading…";
+    cards.innerHTML = "";
+    totals.innerHTML = "";
+    picker.innerHTML = "";
+
+    $("detailTitle").textContent = "";
+    $("detailStatus").textContent = "";
+    $("detailList").innerHTML = "";
+
+    const json = await apiGet({ action: "summary" });
+
+    if (!json.ok) { status.textContent = `Error: ${json.error || "Unknown"}`; return; }
+
+    const rows = json.table || [];
+    if (rows.length < 3) { status.textContent = "No summary data found."; return; }
+
+    const headers = rows[0].map(x => String(x).trim());
+    const budgetRow = rows[1];
+    const monthRows = rows.slice(2).filter(r => String(r[0]||"").trim());
+
+    const categories = headers.slice(1, -1);
+    const budgets = {};
+    categories.forEach((cat, i) => budgets[cat] = parseMoney(budgetRow[i+1]));
+
+    const model = monthRows.map(r => {
+      const month = String(r[0]).trim();
+      const spent = {};
+      categories.forEach((cat, i) => spent[cat] = parseMoney(r[i+1]));
+      return { month, spent };
+    });
+
+    summaryModel = { categories, budgets, months: model };
+
+    model.forEach((m, idx) => {
+      const opt = document.createElement("option");
+      opt.value = String(idx);
+      opt.textContent = m.month;
+      picker.appendChild(opt);
+    });
+
+    picker.value = "0";
+    status.textContent = "";
+
+    picker.onchange = () => renderSummaryForIndex(Number(picker.value));
+    renderSummaryForIndex(0);
+  }
+
+  function renderSummaryForIndex(idx){
+    const status = $("sumStatus");
+    const cards = $("sumCards");
+    const totals = $("sumTotals");
+
+    if (!summaryModel) return;
+    const { categories, budgets, months } = summaryModel;
+    const m = months[idx];
+    if (!m) { status.textContent = "Month not found."; return; }
+
+    const monthKey = monthKeyFromLabel(m.month);
+
+    cards.innerHTML = categories.map(cat => {
+      const b = budgets[cat] || 0;
+      const s = m.spent[cat] || 0;
+      const rem = b - s;
+      const pct = b > 0 ? Math.max(0, Math.min(100, (s / b) * 100)) : 0;
+
+      const pillText = rem >= 0 ? `${fmtGBP(rem)} left` : `${fmtGBP(-rem)} over`;
+
+      return `
+        <div class="card2" style="cursor:pointer;"
+          onclick="showCategoryDetails('${encodeURIComponent(cat)}','${encodeURIComponent(monthKey)}','${encodeURIComponent(m.month)}')">
+          <div class="row2">
+            <div style="font-weight:600;">${escapeHtml(cat)}</div>
+            <div class="kpi">${fmtGBP(s)}</div>
+          </div>
+          <div class="row2">
+            <div class="muted">Budget ${fmtGBP(b)}</div>
+            <span class="pill">${pillText}</span>
+          </div>
+          <div class="bar"><div style="width:${pct}%;"></div></div>
         </div>
-        <div class="bar"><div style="width:${pct}%;"></div></div>
-      </div>
+      `;
+    }).join("");
+
+    const budgetTotal = categories.reduce((acc,c)=>acc+(budgets[c]||0),0);
+    const spentTotal = categories.reduce((acc,c)=>acc+(m.spent[c]||0),0);
+    const remTotal = budgetTotal - spentTotal;
+
+    totals.innerHTML = `
+      <div style="font-weight:800; font-size:16px; margin-bottom:8px;">Totals — ${escapeHtml(m.month)}</div>
+      <div class="row2"><div class="muted">Spent</div><div class="kpi">${fmtGBP(spentTotal)}</div></div>
+      <div class="row2"><div class="muted">Budget</div><div class="kpi">${fmtGBP(budgetTotal)}</div></div>
+      <div class="row2"><div class="muted">${remTotal>=0 ? "Remaining" : "Over"}</div><div class="kpi">${fmtGBP(Math.abs(remTotal))}</div></div>
     `;
-  }).join("");
+  }
 
-  // Totals
-  const budgetTotal = categories.reduce((acc,c)=>acc+(budgets[c]||0),0);
-  const spentTotal = categories.reduce((acc,c)=>acc+(m.spent[c]||0),0);
-  const remTotal = budgetTotal - spentTotal;
+  // Must be global because we call it from onclick=""
+  window.showCategoryDetails = async function(catEnc, monthKeyEnc, monthLabelEnc){
+    const category = decodeURIComponent(catEnc);
+    const monthKey = decodeURIComponent(monthKeyEnc);
+    const monthLabel = decodeURIComponent(monthLabelEnc);
 
-  totals.innerHTML = `
-    <div style="font-weight:800; font-size:16px; margin-bottom:8px;">Totals — ${escapeHtml(m.month)}</div>
-    <div class="row2"><div class="muted">Spent</div><div class="kpi">${fmtGBP(spentTotal)}</div></div>
-    <div class="row2"><div class="muted">Budget</div><div class="kpi">${fmtGBP(budgetTotal)}</div></div>
-    <div class="row2"><div class="muted">${remTotal>=0 ? "Remaining" : "Over"}</div><div class="kpi">${fmtGBP(Math.abs(remTotal))}</div></div>
-  `;
-}
+    $("detailTitle").textContent = `${category} — ${monthLabel}`;
+    $("detailStatus").textContent = "Loading…";
+    $("detailList").innerHTML = "";
 
+    const json = await apiGet({ action: "txns", month: monthKey, category });
 
-const SUMMARY_SHEET = "Lifestyle";   // your actual tab name
-const SUMMARY_RANGE = "A1:G20";
+    if (!json.ok) { $("detailStatus").textContent = `Error: ${json.error || "Unknown"}`; return; }
 
-function getSummary_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sh = ss.getSheetByName(SUMMARY_SHEET);
-  if (!sh) throw new Error(`Sheet "${SUMMARY_SHEET}" not found.`);
-  return sh.getRange(SUMMARY_RANGE).getDisplayValues();
-}
+    const rows = json.data || [];
+    $("detailStatus").textContent = rows.length ? `Showing ${rows.length} items.` : "No items found.";
 
-  </script>
+    $("detailList").innerHTML = rows.map(r => `
+      <div class="item">
+        <div class="left">
+          <div style="font-weight:600;">${escapeHtml(r.date || "")}</div>
+          <div class="small desc">${escapeHtml(r.description || "")}</div>
+        </div>
+        <div class="amt" style="font-weight:700;">${fmtGBP(r.amount || 0)}</div>
+      </div>
+    `).join("");
+  };
+
+  // Init
+  setToday();
+  syncTokenUI();
+  refresh();
+</script>
+
 </body>
 </html>
