@@ -54,7 +54,7 @@
 <section id="tabEntry" class="tabPanel active">
   <div class="card">
     <div class="topline">
-      <div style="font-weight:700;">Quick Expense 2001</div>
+      <div style="font-weight:700;">Quick Expense 1978</div>
       <select id="mode">
         <option value="today">Today</option>
         <option value="all" selected>All</option>
@@ -170,27 +170,27 @@ script.onload = async () => {
   document.head.appendChild(script);
 
   // 3. CORE API CALL (Verified with Clerk Token)
-  async function apiCall(params = {}, body = null) {
+  async function apiCall(endpoint, options = {}) {
+    const user = window.Clerk.user;
+    if (!user) return { ok: false, error: "Not logged in" };
+
     const token = await window.Clerk.session.getToken();
-    const url = new URL(API_URL);
     
-    // Add params to URL
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-    // Always include the verified USER_ID
-    url.searchParams.set("user_id", USER_ID);
+    // Construct the full URL - Ensure 'endpoint' starts with a '?'
+    const url = `https://odd-wind-5e5a.harjbains.workers.dev/${endpoint}`;
 
     const res = await fetch(url, {
-      method: body ? "POST" : "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: body ? JSON.stringify(body) : null
+        ...options,
+        headers: {
+            ...options.headers,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
     });
-    
+
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
     return res.json();
-  }
+}
 
   // 4. APP LOGIC FUNCTIONS
   async function refresh() {
@@ -236,20 +236,20 @@ script.onload = async () => {
   }
 
   async function refreshCategories() {
-  const user = window.Clerk.user; // Always get the current Clerk user
-  if (!user) return;
-
-  const response = await apiCall(`?action=get_budgets&user_id=${user.id}`);
-  if (response.ok) {
-    const select = document.getElementById('categorySelect'); // Or your category dropdown ID
-    select.innerHTML = '<option value="">Select Category</option>';
-    response.data.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b.category;
-      opt.textContent = b.category;
-      select.appendChild(opt);
-    });
-  }
+    const userId = window.Clerk.user.id;
+    // Note: No curly braces around the endpoint string
+    const data = await apiCall(`?action=get_budgets&user_id=${userId}`);
+    
+    if (data.ok) {
+        const select = document.getElementById('categorySelect');
+        select.innerHTML = '<option value="">Select Category</option>';
+        data.data.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.category;
+            opt.textContent = b.category;
+            select.appendChild(opt);
+        });
+    }
 }
 
   async function loadSummary() {
