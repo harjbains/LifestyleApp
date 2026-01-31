@@ -67,6 +67,8 @@ input#date, input#amount {
   width: 100%;
   display: block;
 }
+
+body { display: none; }
   </style>
 </head>
 <body>
@@ -163,18 +165,31 @@ input#date, input#amount {
   script.async = true;
   script.src = `https://secure-platypus-64.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
 
-  script.onload = async () => {
-    await window.Clerk.load();
-    if (window.Clerk.user) {
-      const userBtn = document.createElement('div');
-      userBtn.style.marginLeft = "auto";
-      document.querySelector('.tabs').appendChild(userBtn);
-      window.Clerk.mountUserButton(userBtn);
-      init(); 
-    } else {
-      window.Clerk.openSignIn();
-    }
-  };
+script.onload = async () => {
+  await window.Clerk.load({ publishableKey: clerkPubKey });
+  const homeUrl = window.location.origin + window.location.pathname;
+
+  if (window.Clerk.user) {
+    // Show the app only if logged in
+    document.body.style.display = "block"; 
+    
+    const userBtn = document.getElementById('user-button') || document.createElement('div');
+    userBtn.id = "user-button";
+    userBtn.style.marginLeft = "auto";
+    document.querySelector('.tabs').appendChild(userBtn);
+    
+    window.Clerk.mountUserButton(userBtn, { afterSignOutUrl: homeUrl });
+    init(); 
+  } else {
+    // Force redirect to login
+    window.Clerk.openSignIn({
+      afterSignInUrl: homeUrl,
+      afterSignUpUrl: homeUrl,
+      signInForceRedirectUrl: homeUrl 
+    });
+  }
+};
+
   document.head.appendChild(script);
 
   // 3. REPAIRED API CALL (Handles URL encoding and Tokens)
@@ -333,6 +348,8 @@ input#date, input#amount {
 
   // 6. INITIALIZATION (The engine)
   function init() {
+
+    document.body.style.display = "block";
     setToday();
     refresh();
     refreshCategories();
@@ -354,24 +371,13 @@ input#date, input#amount {
     $("tabSummaryBtn").onclick = () => setTab("summary");
     $("tabSettingsBtn").onclick = () => setTab("settings");
 
-    / Listen for the end of a touch
-window.addEventListener('touchend', async (e) => {
-  const touchEnd = e.changedTouches[0].pageY;
-  const swipeDistance = touchEnd - touchStart;
+    // Listen for the end of a touch
 
-  // If user swiped down more than 150px and is at the top of the page
-  if (swipeDistance > 150 && window.scrollY === 0) {
-    statusEl.textContent = "Refreshing...";
-    try {
-      await refresh();
-      await refreshCategories();
-      statusEl.textContent = "Updated ✔";
-      setTimeout(() => { statusEl.textContent = ""; }, 2000);
-    } catch (err) {
-      statusEl.textContent = "Refresh failed";
-    }
-  }
+    let touchStart = 0;
+window.addEventListener('touchstart', (e) => {
+  touchStart = e.touches[0].pageY;
 }, { passive: true });
+
   }
 </script>
 </body>
